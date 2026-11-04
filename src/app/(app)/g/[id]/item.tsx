@@ -348,22 +348,11 @@ function InlineNumber({ value, onChange, prefix, suffix, label }: {
 function CategoryPicker({ categories, value, onChange, groupId }: {
   categories: Category[]; value: string | null; onChange: (id: string | null) => void; groupId: string;
 }) {
-  const add = useAddCategory(groupId);
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('🏷️');
-  const [picking, setPicking] = useState(false);
+  // null = fechado; string = modal de nova categoria aberto (já com esse nome, vindo da busca).
+  const [creating, setCreating] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const scroller = useRef<ScrollViewInstance>(null);
   const shownFor = useRef<string | null>(null);
-
-  async function create() {
-    const { id } = await add.mutateAsync({ name, emoji });
-    onChange(id);
-    setCreating(false);
-    setName('');
-    setEmoji('🏷️');
-  }
 
   return (
     <View style={{ gap: space.sm }}>
@@ -380,7 +369,7 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
       <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         style={{ marginHorizontal: -space.xl }}
         contentContainerStyle={{ paddingHorizontal: space.xl, gap: 8 }}>
-        {!creating ? <Chip label="＋ Nova" onPress={() => setCreating(true)} /> : null}
+        <Chip label="＋ Nova" onPress={() => setCreating('')} />
         {categories.map((c) => (
           <View key={c.id} onLayout={(e) => {
             // Ao editar (ou criar), a categoria escolhida já aparece sem precisar rolar.
@@ -394,32 +383,64 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
           </View>
         ))}
       </ScrollView>
-      {creating ? (
-        <View style={{ gap: 8 }}>
+      <AllCategories visible={showAll} onClose={() => setShowAll(false)} categories={categories} value={value}
+        onPick={(id) => { shownFor.current = null; onChange(id); setShowAll(false); }}
+        onNew={(name) => { setShowAll(false); setCreating(name); }} />
+      {/* Montado só quando abre: cada vez começa limpo. */}
+      {creating !== null ? (
+        <NewCategory groupId={groupId} initialName={creating} onClose={() => setCreating(null)}
+          onCreated={(id) => { shownFor.current = null; onChange(id); setCreating(null); }} />
+      ) : null}
+    </View>
+  );
+}
+
+/** Folha para criar categoria: emoji + nome. Ao criar, já fica selecionada no item. */
+function NewCategory({ groupId, initialName, onClose, onCreated }: {
+  groupId: string; initialName: string; onClose: () => void; onCreated: (id: string) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const add = useAddCategory(groupId);
+  const [name, setName] = useState(initialName);
+  const [emoji, setEmoji] = useState('🏷️');
+  const [picking, setPicking] = useState(false);
+
+  async function create() {
+    if (!name.trim()) return;
+    const { id } = await add.mutateAsync({ name: name.trim(), emoji });
+    onCreated(id);
+  }
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
+        <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+          paddingTop: space.sm, paddingHorizontal: space.xl, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
+          <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.divider }} />
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>Nova categoria</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <EmojiTile emoji={emoji} size={52} onPress={() => setPicking(true)} label="Emoji da categoria" />
             <Input value={name} onChangeText={setName} placeholder="Nome da categoria" autoFocus maxLength={30}
-              style={{ flex: 1, height: 52 }} returnKeyType="done" onSubmitEditing={() => name.trim() && create()} />
+              style={{ flex: 1, height: 52 }} returnKeyType="done" onSubmitEditing={create} />
           </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 44 }} onPress={() => setCreating(false)} />
-            <Button title="Criar" style={{ flex: 1, height: 44 }} disabled={!name.trim()} loading={add.isPending} onPress={create} />
-          </View>
+          <Text style={{ fontSize: 13, color: colors.muted }}>Toque no emoji para trocar. A categoria vale para todo o grupo.</Text>
           <ErrorText>{add.error?.message}</ErrorText>
-          <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 48 }} onPress={onClose} />
+            <Button title="Criar" style={{ flex: 1, height: 48 }} disabled={!name.trim()} loading={add.isPending} onPress={create} />
+          </View>
         </View>
-      ) : null}
-      <AllCategories visible={showAll} onClose={() => setShowAll(false)} categories={categories} value={value}
-        onPick={(id) => { shownFor.current = null; onChange(id); setShowAll(false); }}
-        onNew={() => { setShowAll(false); setCreating(true); }} />
-    </View>
+      </KeyboardAvoidingView>
+      <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
+    </Modal>
   );
 }
 
 /** Todas as categorias numa folha que sobe de baixo, com busca quando são muitas. */
 function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
   visible: boolean; onClose: () => void; categories: Category[]; value: string | null;
-  onPick: (id: string | null) => void; onNew: () => void;
+  onPick: (id: string | null) => void; onNew: (name: string) => void;
 }) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
@@ -453,8 +474,10 @@ function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
           ))}
           {!shown.length ? <Text style={{ fontSize: 15, color: colors.muted }}>Nenhuma categoria com esse nome.</Text> : null}
         </ScrollView>
-        <Pressable onPress={() => { setQuery(''); onNew(); }} hitSlop={8} style={{ paddingHorizontal: space.xl }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>＋ Nova categoria</Text>
+        <Pressable onPress={() => { setQuery(''); onNew(shown.length ? '' : query.trim()); }} hitSlop={8} style={{ paddingHorizontal: space.xl }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>
+            {!shown.length && query.trim() ? `＋ Criar "${query.trim()}"` : '＋ Nova categoria'}
+          </Text>
         </Pressable>
       </View>
     </Modal>
