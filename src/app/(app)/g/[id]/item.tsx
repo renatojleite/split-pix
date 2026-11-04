@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
 
 import { DateField } from '@/components/date-field';
 import { EmojiPicker } from '@/components/emoji-picker';
@@ -352,6 +352,8 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🏷️');
   const [picking, setPicking] = useState(false);
+  const scroller = useRef<ScrollViewInstance>(null);
+  const shownFor = useRef<string | null>(null);
 
   async function create() {
     const { id } = await add.mutateAsync({ name, emoji });
@@ -363,13 +365,24 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
 
   return (
     <Field label="Categoria">
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {categories.map((c) => (
-          <Chip key={c.id} label={`${c.emoji} ${c.name}`} selected={value === c.id}
-            onPress={() => onChange(value === c.id ? null : c.id)} />
-        ))}
+      {/* Uma linha só, rolando para o lado; vai até a borda da tela. */}
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+        style={{ marginHorizontal: -space.xl }}
+        contentContainerStyle={{ paddingHorizontal: space.xl, gap: 8 }}>
         {!creating ? <Chip label="＋ Nova" onPress={() => setCreating(true)} /> : null}
-      </View>
+        {categories.map((c) => (
+          <View key={c.id} onLayout={(e) => {
+            // Ao editar (ou criar), a categoria escolhida já aparece sem precisar rolar.
+            if (value === c.id && shownFor.current !== c.id) {
+              shownFor.current = c.id;
+              scroller.current?.scrollTo({ x: Math.max(0, e.nativeEvent.layout.x - space.xl), animated: false });
+            }
+          }}>
+            <Chip label={`${c.emoji} ${c.name}`} selected={value === c.id}
+              onPress={() => onChange(value === c.id ? null : c.id)} />
+          </View>
+        ))}
+      </ScrollView>
       {creating ? (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
