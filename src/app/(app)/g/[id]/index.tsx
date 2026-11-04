@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { ActionSheet } from '@/components/action-sheet';
 
 import { BalancesTab } from '@/components/group/balances-tab';
 import { ExpensesTab } from '@/components/group/expenses-tab';
@@ -20,6 +22,8 @@ export default function GroupScreen() {
   useGroupRealtime(id);
   const [tab, setTab] = useState<Tab>('despesas');
   const [month, setMonth] = useState(monthStart(today()));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   if (!group.data) {
     return (
@@ -41,7 +45,12 @@ export default function GroupScreen() {
               <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }} numberOfLines={1}>{g.name}</Text>
             </View>
           }
-          right={<IconButton name="share" label="Convidar" onPress={() => router.push({ pathname: '/g/[id]/convite', params: { id } })} />}
+          right={
+            <View style={{ flexDirection: 'row' }}>
+              <IconButton name="share" label="Convidar" onPress={() => router.push({ pathname: '/g/[id]/convite', params: { id } })} />
+              <IconButton name="more" label="Mais opções" onPress={() => setMenuOpen(true)} />
+            </View>
+          }
         />
         <Segmented<Tab> value={tab} onChange={setTab} options={[
           { value: 'despesas', label: 'Despesas' },
@@ -59,11 +68,21 @@ export default function GroupScreen() {
       </View>
 
       {tab === 'despesas' ? (
-        <View style={{ position: 'absolute', bottom: 28, alignSelf: 'center' }}>
+        // Acima da barra de navegação do Android (o app desenha por baixo dela).
+        <View style={{ position: 'absolute', bottom: insets.bottom + 20, alignSelf: 'center' }}>
           <Button title="Adicionar" icon="plus" onPress={() => router.push({ pathname: '/g/[id]/item', params: { id } })}
             style={{ borderRadius: 28, paddingHorizontal: 28, elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }} />
         </View>
       ) : null}
+
+      <ActionSheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={`${g.emoji} ${g.name}`} actions={[
+        { emoji: '💸', label: 'Criar pagamento Pix', hint: 'QR ou código para alguém te pagar, com qualquer valor',
+          onPress: () => router.push({ pathname: '/g/[id]/pix', params: { id } }) },
+        { emoji: '📋', label: 'Duplicar grupo', hint: 'Mesmas pessoas, categorias e divisão',
+          onPress: () => router.push({ pathname: '/g/[id]/duplicar', params: { id } }) },
+        { emoji: '🔗', label: 'Convidar', hint: 'Código, QR e link do app',
+          onPress: () => router.push({ pathname: '/g/[id]/convite', params: { id } }) },
+      ]} />
     </SafeAreaView>
   );
 }

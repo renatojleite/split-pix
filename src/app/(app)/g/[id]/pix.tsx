@@ -13,7 +13,8 @@ import { buildPixPayload, normalizePixKey, type PixKeyType } from '@/lib/pix';
 import { PREF, usePref, type PixProfile } from '@/lib/prefs';
 import { colors, space } from '@/theme';
 
-type Params = { id: string; from: string; to: string; amount: string };
+// from/to/amount vêm do cartão de saldo; pelo menu do grupo chegam vazios (cobrança livre).
+type Params = { id: string; from?: string; to?: string; amount?: string };
 
 const KEY_TYPES: { value: PixKeyType; label: string; placeholder: string; keyboard: 'default' | 'number-pad' | 'phone-pad' | 'email-address' }[] = [
   { value: 'cpf', label: 'CPF/CNPJ', placeholder: '000.000.000-00', keyboard: 'number-pad' },
@@ -25,7 +26,7 @@ const KEY_TYPES: { value: PixKeyType; label: string; placeholder: string; keyboa
 export default function PixScreen() {
   const params = useLocalSearchParams<Params>();
   const group = useGroup(params.id);
-  if (!group.data) return <Screen><Header title="Receber via Pix" /><Loading /></Screen>;
+  if (!group.data) return <Screen><Header title="Pix" /><Loading /></Screen>;
   return <PixForm params={params} detail={group.data} />;
 }
 
@@ -33,7 +34,12 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   const userId = useUserId();
   const save = useSaveEntry(detail.group.id);
   const me = detail.members.find((m) => m.user_id === userId);
-  const payer = detail.members.find((m) => m.id === params.from);
+  const others = detail.members.filter((m) => m.id !== me?.id);
+  const fromDebt = !!params.from;
+  // Quem paga: o devedor do saldo, ou escolhido na hora (único outro membro já vem marcado).
+  const [payerId, setPayerId] = useState<string | null>(params.from ?? (others.length === 1 ? others[0].id : null));
+  const payer = detail.members.find((m) => m.id === payerId);
+  const receiverId = params.to ?? me?.id;
 
   const [saved, setSaved] = usePref<PixProfile | null>(PREF.pix, null);
   const [editingKey, setEditingKey] = useState(!saved);
@@ -69,7 +75,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
 
   const message = payload
     ? [
-        `💸 Pix para acertar o split-pix — ${detail.group.emoji} ${detail.group.name}`,
+        `💸 Pix do split-pix — ${detail.group.emoji} ${detail.group.name}`,
         '',
         `Valor: *${formatBRL(amount)}*`,
         `Para: ${name.trim()}`,
@@ -99,7 +105,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   async function registerSettlement() {
     Alert.alert(
       'Registrar acerto?',
-      `Confirme no app do seu banco que o Pix de ${formatBRL(amount)} chegou. O split-pix não consegue verificar.`,
+      `Confirme no app do seu banco que o Pix de ${formatBRL(amount)} de ${payer?.display_name} chegou. O split-pix não consegue verificar. O valor entra como acerto de ${payer?.display_name} para você e ajusta o saldo.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -107,7 +113,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
           onPress: async () => {
             await save.mutateAsync({
               type: 'transfer', title: 'Acerto via Pix', amountCents: amount,
-              paidBy: params.from, transferTo: params.to, occurredOn: today(), splitMode: 'default', emoji: '💸',
+              paidBy: payerId!, transferTo: receiverId!, occurredOn: today(), splitMode: 'default', emoji: '💸',
             });
             router.back();
           },
@@ -125,13 +131,30 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
       ) : (
         <>
           <ErrorText>{save.error?.message}</ErrorText>
-          <Button title="Já recebi — registrar acerto" variant="positive" onPress={registerSettlement} loading={save.isPending} />
+          {payerId && receiverId ? (
+            <Button title="Já recebi — registrar acerto" variant="positive" onPress={registerSettlement} loading={save.isPending} />
+          ) : (
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+              Escolha quem vai pagar para poder registrar o acerto depois.
+            </Text>
+          )}
         </>
       )}>
-        <Header title="Receber via Pix" />
+        <Header title={fromDebt ? 'Receber via Pix' : 'Criar pagamento Pix'} />
         <Text style={{ fontSize: 15, lineHeight: 22, color: colors.muted }}>
-          {payer?.display_name ?? 'A outra pessoa'} lê o QR (ou cola o código) no app do banco, e o valor já vem preenchido.
+          {payer?.display_name ?? 'Quem for pagar'} lê o QR (ou cola o código) no app do banco, e o valor já vem preenchido.
         </Text>
+
+        {!fromDebt && others.length > 0 ? (
+          <Field label="Quem vai pagar">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {others.map((m) => (
+                <Chip key={m.id} label={m.display_name} color={m.color} selected={payerId === m.id}
+                  onPress={() => setPayerId(payerId === m.id ? null : m.id)} />
+              ))}
+            </View>
+          </Field>
+        ) : null}
 
         <Field label="Valor">
           <Input big value={amount ? `R$ ${inputFromCents(amount)}` : ''} placeholder="R$ 0,00" keyboardType="number-pad"
