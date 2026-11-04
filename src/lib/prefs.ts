@@ -36,6 +36,8 @@ export type PixProfile = { keyType: PixKeyType; key: string; name: string; city:
 
 export const PREF = {
   peoplePinned: 'splitpix.group.peoplePinned',
+  /** Ordem dos grupos na Home (ids), arrastando. */
+  groupOrder: 'splitpix.home.groupOrder',
   calendarOpen: 'splitpix.group.calendarOpen',
   pix: 'splitpix.pix.profile',
   /** Chaves Pix de outros membros (para pagar), por id do membro. */

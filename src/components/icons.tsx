@@ -5,7 +5,7 @@ import { colors } from '@/theme';
 export type IconName =
   | 'back' | 'chevron-right' | 'chevron-left' | 'plus' | 'share' | 'qr' | 'check' | 'close'
   | 'home' | 'heart' | 'plane' | 'gift' | 'cart' | 'star' | 'bolt' | 'child' | 'party' | 'car'
-  | 'tag' | 'transfer' | 'income' | 'trash' | 'logout' | 'edit' | 'camera' | 'copy' | 'repeat' | 'chart' | 'pin' | 'more' | 'calendar';
+  | 'tag' | 'transfer' | 'income' | 'trash' | 'logout' | 'edit' | 'camera' | 'copy' | 'repeat' | 'chart' | 'pin' | 'more' | 'calendar' | 'grip' | 'refresh';
 
 const paths: Record<IconName, (c: string) => React.ReactNode> = {
   back: () => <Path d="M19 12H5M12 19l-7-7 7-7" />,
@@ -81,6 +81,8 @@ const paths: Record<IconName, (c: string) => React.ReactNode> = {
       <Rect x={3} y={5} width={18} height={16} rx={2} /><Path d="M3 10h18M8 3v4M16 3v4" />
     </>
   ),
+  grip: () => <Path d="M5 9h14M5 15h14" />,
+  refresh: () => <Path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" />,
   more: () => (
     <>
       <Circle cx={12} cy={5} r={1.3} /><Circle cx={12} cy={12} r={1.3} /><Circle cx={12} cy={19} r={1.3} />

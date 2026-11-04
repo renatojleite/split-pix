@@ -192,6 +192,9 @@ test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por
   assert.deepEqual(lines.slice(0, 4), ['💸 *split-pix*', '━━━━━━━━━━━━━━', '🏠 *Casa* — relatório resumido',
     '📅 Período: 28/10/2026 a 04/11/2026 (acumulado)']);
   assert.ok(sum.includes('• Gasto total: *R$ 900,00*'));
+  const pr = lines.indexOf('*Renato*');
+  assert.deepEqual(lines.slice(pr - 1, pr + 5), ['', '*Renato*', '• Total dividido (parte): R$ 540,00', '• Valor gasto (pagou): R$ 900,00',
+    '• Acertos: recebeu R$ 60,00', '👉 *Saldo: +R$ 300,00 — a receber*'], 'por pessoa: ordem e espaço');
   const at = lines.indexOf('*Paula → Renato*');
   assert.ok(at > 0 && lines[at - 1] === '', 'linha em branco antes de cada pendência');
   assert.equal(lines[at + 1], '💰 Valor: *R$ 300,00*');

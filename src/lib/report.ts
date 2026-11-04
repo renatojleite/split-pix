@@ -110,16 +110,17 @@ export function buildReport(input: ReportInput): string {
   if (biggest) add(`• Maior gasto: ${formatBRL(biggest.amount_cents)} — ${biggest.title}`);
   if (expenses.length > 1) add(`• Média por despesa: ${formatBRL(Math.round(s.spent / expenses.length))}`);
 
-  // Por pessoa
+  // Por pessoa: um bloco por pessoa, um dado por linha, saldo por último e em destaque.
   add('', '👥 *Por pessoa*');
   for (const p of shownPeople(s.people, members)) {
-    const status = p.balance > 0 ? ' (a receber)' : p.balance < 0 ? ' (a pagar)' : '';
-    add(`*${name(p.memberId)}* — saldo ${formatBRL(p.balance, { sign: true })}${status}`);
-    add(`   Pagou ${formatBRL(p.paid)} · Parte ${formatBRL(p.share)}`);
-    if (p.received) add(`   Recebeu ${formatBRL(p.received)} em entradas`);
-    if (p.sent || p.got) {
-      add(`   Acertos: ${[p.sent ? `enviou ${formatBRL(p.sent)}` : '', p.got ? `recebeu ${formatBRL(p.got)}` : ''].filter(Boolean).join(' · ')}`);
-    }
+    const settlements = [p.sent ? `enviou ${formatBRL(p.sent)}` : '', p.got ? `recebeu ${formatBRL(p.got)}` : ''].filter(Boolean).join(' · ');
+    const status = p.balance > 0 ? ' — a receber' : p.balance < 0 ? ' — a pagar' : ' — em dia';
+    add('', `*${name(p.memberId)}*`);
+    add(`• Total dividido (parte): ${formatBRL(p.share)}`);
+    add(`• Valor gasto (pagou): ${formatBRL(p.paid)}`);
+    if (p.received) add(`• Entradas recebidas: ${formatBRL(p.received)}`);
+    add(`• Acertos: ${settlements || 'nenhum'}`);
+    add(`👉 *Saldo: ${formatBRL(p.balance, { sign: true })}${status}*`);
   }
 
   // Por categoria (sem valores por pessoa)
