@@ -185,5 +185,7 @@ ok(Number(bSrc[0].b) === Number(bDup[0].b), `saldos iguais no grupo copiado (${b
 ok(!!(await fails(C, `select duplicate_group($1, 'hack')`, ['00000000-0000-0000-0000-000000000999'])), 'não duplica grupo alheio');
 ok(!!(await fails(A, `select write_entry(null,$1,'expense','x',null,1,$2,null,null,'2026-11-01','default',null,null,null,null,null)`, [g, R])), 'write_entry interna não exposta');
 
+ok(!!(await (async () => { try { await db.exec(`reset role; set role anon;`); await db.query(`select preview_invite('AAAAAA')`); return null; } catch (e) { return e.message; } finally { await db.exec('reset role;'); } })()), 'sem login não chama funções');
+
 console.log(failures ? `\n${failures} falha(s)` : '\ntodos os testes passaram');
 process.exit(failures ? 1 : 0);

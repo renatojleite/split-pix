@@ -773,3 +773,25 @@ revoke execute on function public.effective_rule(uuid, uuid, date) from public, 
 alter publication supabase_realtime add table
   public.entries, public.entry_shares, public.group_members,
   public.split_rules, public.split_rule_shares, public.categories, public.groups;
+
+-- ─────────────────────────── Endurecimento ───────────────────────────
+-- (apontado pelo linter de segurança do Supabase)
+
+alter function public.member_color(int) set search_path = public;
+alter function public.allocate_cents(bigint, uuid[], int[], uuid) set search_path = public;
+
+-- Nada da API roda sem login; só o necessário fica liberado para quem entrou.
+revoke execute on all functions in schema public from anon, public;
+grant execute on function
+  public.is_member(uuid), public.is_owner(uuid), public.shares_group_with(uuid),
+  public.effective_rule(uuid, uuid, date), public.member_color(int),
+  public.create_group(text, text, text, text[], int[]),
+  public.preview_invite(text), public.accept_invite(text, uuid, text),
+  public.add_member(uuid, text), public.regenerate_invite(uuid),
+  public.set_split_rule(uuid, uuid, date, uuid[], int[]),
+  public.clear_category_rule(uuid, uuid),
+  public.save_entry(uuid, text, text, bigint, uuid, date, uuid, uuid, uuid, text, uuid[], jsonb, text, int, text),
+  public.delete_entry(uuid, text),
+  public.duplicate_group(uuid, text, text, boolean)
+to authenticated;
+alter default privileges in schema public revoke execute on functions from anon, public;
