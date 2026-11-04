@@ -1,0 +1,66 @@
+# Compila o APK de teste a cada push na main e publica numa Release do GitHub,
+# de onde dá para baixar e instalar direto no celular.
+name: APK Android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # Chaves públicas do Supabase (protegidas por RLS); as mesmas do eas.json.
+      EXPO_PUBLIC_SUPABASE_URL: https://giqbswgjkcblcsjdtmaz.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_GfXq_2NLydTFEIkzd5K3iA_YexBvmPu
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes
+        run: |
+          npm run typecheck
+          npm test
+          npm run test:sql
+
+      - name: Gerar projeto Android
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Compilar APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Renomear
+        run: cp android/app/build/outputs/apk/release/app-release.apk split-pix-${{ github.run_number }}.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: split-pix-apk
+          path: split-pix-${{ github.run_number }}.apk
+
+      - name: Publicar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: split-pix teste ${{ github.run_number }}
+          body: APK de teste. Baixe no Android e permita "instalar apps desta fonte".
+          files: split-pix-${{ github.run_number }}.apk
+          prerelease: true
