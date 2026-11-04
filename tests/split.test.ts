@@ -192,9 +192,12 @@ test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por
   assert.deepEqual(lines.slice(0, 4), ['💸 *split-pix*', '━━━━━━━━━━━━━━', '🏠 *Casa* — relatório resumido',
     '📅 Período: 28/10/2026 a 04/11/2026 (acumulado)']);
   assert.ok(sum.includes('• Gasto total: *R$ 900,00*'));
-  assert.ok(sum.includes('• Paula deve *R$ 300,00* a Renato'));
-  const pix = lines[lines.findIndex((l) => l.includes('Pix copia e cola')) + 1];
-  assert.match(pix, /^000201.*5406300\.00/);
+  const at = lines.indexOf('*Paula → Renato*');
+  assert.ok(at > 0 && lines[at - 1] === '', 'linha em branco antes de cada pendência');
+  assert.equal(lines[at + 1], '💰 Valor: *R$ 300,00*');
+  assert.equal(lines[at + 2], '📋 Pix copia e cola:');
+  assert.equal(lines[at + 3], '');
+  assert.match(lines[at + 4], /^000201[^`*_~]*5406300\.00[^`*_~]*$/, 'código sozinho numa linha, sem formatação');
   assert.ok(sum.includes('🛒 Mercado — R$ 900,00 (100%)'));
   assert.ok(sum.includes('• *Paula*: (ausente)') && sum.includes('   +5511987654321'));
   assert.ok(!sum.includes('Extrato'));
@@ -218,6 +221,6 @@ test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por
 
   // Credor sem chave: Pendente mostra só a dívida, sem aviso de cadastro
   const noKey = buildReport({ ...base, kind: 'summary', members: [{ ...renato, ...NO_PIX }, paula] });
-  assert.ok(!noKey.includes('ainda não cadastrou') && !noKey.includes('Pix copia e cola'));
+  assert.ok(noKey.includes('💰 Valor: *R$ 300,00*') && !noKey.includes('Pix copia e cola'));
   assert.ok(noKey.includes('• *Renato*: (ausente)'));
 });

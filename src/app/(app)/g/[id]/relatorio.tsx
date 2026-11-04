@@ -8,7 +8,8 @@ import { Button, Card, Chip, ErrorText, Header, Loading, Screen, Segmented } fro
 import { useAllEntries, useEntries, useGroup, type GroupDetail } from '@/lib/api';
 import { APK_DOWNLOAD_URL } from '@/lib/config';
 import { monthStart, today } from '@/lib/dates';
-import { buildReport, type ReportKind } from '@/lib/report';
+import { formatBRL } from '@/lib/money';
+import { buildReport, pendingPix, type ReportKind } from '@/lib/report';
 import { colors, space } from '@/theme';
 
 // Da aba Resumo chegam o período escolhido lá; do menu ⋮, nada (acumulado).
@@ -28,7 +29,7 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
   const [kind, setKind] = useState<ReportKind>(params.kind ?? 'summary');
   const [scope, setScope] = useState<'all' | 'month'>(params.month ? 'month' : 'all');
   const [month, setMonth] = useState(params.month ?? monthStart(today()));
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null); // 'report' ou o código Pix copiado
   const monthly = useEntries(detail.group.id, month);
   const all = useAllEntries(detail.group.id, scope === 'all');
   const source = scope === 'month' ? monthly : all;
@@ -40,29 +41,32 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
       })
     : '';
   const missingPix = detail.members.filter((m) => !m.pix_key).map((m) => m.display_name);
+  const pending = source.data
+    ? pendingPix({ entries: source.data, members: detail.allMembers, categories: detail.categories, group: detail.group })
+    : [];
 
-  async function whatsapp() {
-    const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
-    if (url.length > WHATSAPP_URL_LIMIT) return Share.share({ message: text });
+  async function whatsapp(message: string) {
+    const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
+    if (url.length > WHATSAPP_URL_LIMIT) return Share.share({ message });
     try {
       await Linking.openURL(url);
     } catch {
-      await Share.share({ message: text }); // sem WhatsApp instalado
+      await Share.share({ message }); // sem WhatsApp instalado
     }
   }
 
-  async function copy() {
-    await Clipboard.setStringAsync(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  async function copy(value: string, tag: string) {
+    await Clipboard.setStringAsync(value);
+    setCopied(tag);
+    setTimeout(() => setCopied(null), 2500);
   }
 
   return (
     <Screen footer={(
       <View style={{ gap: space.sm }}>
-        <Button title="Enviar no WhatsApp" icon="share" variant="positive" onPress={whatsapp} disabled={!text} />
+        <Button title="Enviar no WhatsApp" icon="share" variant="positive" onPress={() => whatsapp(text)} disabled={!text} />
         <View style={{ flexDirection: 'row', gap: space.sm }}>
-          <Button title={copied ? 'Copiado ✓' : 'Copiar texto'} icon="copy" variant="secondary" onPress={copy}
+          <Button title={copied === 'report' ? 'Copiado ✓' : 'Copiar texto'} icon="copy" variant="secondary" onPress={() => copy(text, 'report')}
             disabled={!text} style={{ flex: 1 }} />
           <Button title="Outro app" variant="secondary" onPress={() => Share.share({ message: text })}
             disabled={!text} style={{ flex: 1 }} />
@@ -91,6 +95,32 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
         <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
           Sem chave Pix no grupo: {missingPix.join(', ')}. Aparece como (ausente). Cadastre em Divisão › Participantes.
         </Text>
+      ) : null}
+
+      {pending.some((t) => t.code) ? (
+        <Card style={{ gap: space.md }}>
+          <View style={{ gap: 2 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>Pix das pendências</Text>
+            <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+              No WhatsApp, segurar a mensagem copia ela inteira. Para colar no banco, envie o código sozinho
+              (quem recebe segura e copia) ou copie aqui.
+            </Text>
+          </View>
+          {pending.filter((t) => t.code).map((t, i) => (
+            <View key={`${t.from}-${t.to}`} style={{ gap: 8, paddingTop: i ? space.md : 0,
+              borderTopWidth: i ? 1 : 0, borderColor: colors.divider }}>
+              <Text style={{ fontSize: 15, color: colors.text }}>
+                {t.fromName} → {t.toName} · <Text style={{ fontWeight: '700' }}>{formatBRL(t.cents)}</Text>
+              </Text>
+              <View style={{ flexDirection: 'row', gap: space.sm }}>
+                <Button title={copied === t.code ? 'Copiado ✓' : 'Copiar código'} icon="copy" variant="secondary"
+                  onPress={() => copy(t.code!, t.code!)} style={{ flex: 1, height: 44 }} />
+                <Button title="Enviar só o código" variant="secondary" onPress={() => whatsapp(t.code!)}
+                  style={{ flex: 1, height: 44 }} />
+              </View>
+            </View>
+          ))}
+        </Card>
       ) : null}
 
       {source.error ? <ErrorText>{source.error.message}</ErrorText> : null}

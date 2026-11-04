@@ -66,6 +66,17 @@ function pixFor(m: Member, cents: number, group: ReportInput['group']): string |
   }
 }
 
+export type PendingPix = { from: string; to: string; fromName: string; toName: string; cents: number; code: string | null };
+
+/** Quem deve a quem no período, já com o Pix copia e cola no valor (null se quem recebe não tem chave). */
+export function pendingPix({ entries, members, categories, group }: Pick<ReportInput, 'entries' | 'members' | 'categories' | 'group'>): PendingPix[] {
+  const name = (id: string) => members.find((m) => m.id === id)?.display_name ?? '—';
+  return summarize(entries, members, categories).transfers.map((t) => {
+    const to = members.find((m) => m.id === t.to);
+    return { ...t, fromName: name(t.from), toName: name(t.to), code: to ? pixFor(to, t.cents, group) : null };
+  });
+}
+
 export function buildReport(input: ReportInput): string {
   const { kind, group, members, categories, entries, month, appUrl, generatedOn } = input;
   const s = summarize(entries, members, categories);
@@ -116,16 +127,16 @@ export function buildReport(input: ReportInput): string {
   if (!s.categories.length) add('Nenhum gasto no período.');
   for (const c of s.categories) add(`${c.emoji} ${c.name} — ${formatBRL(c.cents)} (${Math.round(c.ratio * 100)}%)`);
 
-  // Pendente, com o Pix já no valor
+  // Pendente: um bloco por dívida, com espaço entre eles e o Pix numa linha só dele.
   add('', '⏳ *Pendente*');
-  if (!s.transfers.length) add('✅ Ninguém deve nada no período.');
-  for (const t of s.transfers) {
-    add(`• ${name(t.from)} deve *${formatBRL(t.cents)}* a ${name(t.to)}`);
-    const to = members.find((m) => m.id === t.to);
-    const code = to ? pixFor(to, t.cents, group) : null;
+  const pend = pendingPix({ entries, members, categories, group });
+  if (!pend.length) add('', '✅ Ninguém deve nada no período.');
+  pend.forEach((t, i) => {
+    add('', `*${pend.length > 1 ? `${i + 1}. ` : ''}${t.fromName} → ${t.toName}*`, `💰 Valor: *${formatBRL(t.cents)}*`);
     // Sem chave, só a dívida: o "(ausente)" já aparece em Chaves Pix.
-    if (code) add(`   Pix copia e cola (${formatBRL(t.cents)} para ${name(t.to)}):`, code);
-  }
+    // Código sozinho na linha, sem formatação (crase ou asterisco quebrariam o colar no banco).
+    if (t.code) add('📋 Pix copia e cola:', '', t.code);
+  });
 
   // Chaves Pix de quem está no grupo
   add('', '💳 *Chaves Pix*');
