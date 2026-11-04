@@ -58,9 +58,13 @@ export default function Codigo() {
         footer={<Button title="Entrar" onPress={() => verify(code)} disabled={code.length !== LENGTH} loading={busy} />}>
         <Header />
         <View style={{ gap: 8 }}>
-          <Text style={type.screenTitle}>Digite o código</Text>
+          <Text style={type.screenTitle}>Confira seu e-mail</Text>
           <Text style={{ fontSize: 16, lineHeight: 24, color: colors.muted }}>
-            Enviamos 6 dígitos para <Text style={{ color: colors.text, fontWeight: '600' }}>{email}</Text>
+            Enviamos um e-mail para <Text style={{ color: colors.text, fontWeight: '600' }}>{email}</Text>.
+            Abra neste celular e toque no link: o split-pix abre já conectado.
+          </Text>
+          <Text style={{ fontSize: 14, lineHeight: 20, color: colors.muted }}>
+            Se o e-mail trouxer um código de 6 dígitos, digite abaixo.
           </Text>
         </View>
 

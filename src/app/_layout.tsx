@@ -47,6 +47,8 @@ function RootStack() {
           <Stack.Screen name="login" />
           <Stack.Screen name="codigo" />
         </Stack.Protected>
+        {/* Link do e-mail: precisa abrir com ou sem sessão. */}
+        <Stack.Screen name="login-callback" />
       </Stack>
     </>
   );
