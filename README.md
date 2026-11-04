@@ -56,13 +56,21 @@ npm test            # cálculo de divisão, dinheiro e datas no app
 npm run test:sql    # schema num Postgres embutido: cálculo, vigência, convite, RLS
 ```
 
-`test:sql` sobe as migrações no PGlite com stubs do `auth` do Supabase e cobre 31 casos. Entre eles: o exemplo do PRD (Paula deve R$ 525,00), a sobra de centavos indo para quem pagou e a mudança de % que não reescreve meses anteriores. Também confirma que quem não é do grupo não vê nem grava nada.
+`test:sql` sobe as migrações no PGlite com stubs do `auth` do Supabase e cobre 50 casos, incluindo recorrência e duplicação de grupo. Entre eles: o exemplo do PRD (Paula deve R$ 525,00), a sobra de centavos indo para quem pagou e a mudança de % que não reescreve meses anteriores. Também confirma que quem não é do grupo não vê nem grava nada.
 
 ## Como funciona
 
 **Divisão.** Cada lançamento usa o % mais específico: *item > categoria > padrão do grupo*. Regras têm vigência por mês (`split_rules.effective_from`), e as cotas são gravadas em `entry_shares` no momento do lançamento — mudar o % depois não altera o histórico. O cálculo oficial é a função `save_entry` no banco; `src/lib/split.ts` espelha a mesma lógica só para a prévia no formulário.
 
 **Saldo** de cada pessoa = o que pagou − a sua parte (+ receitas e acertos), pela view `member_balances`. A aba Saldos sugere quem paga quem e o botão "Registrar acerto" cria a transferência que zera.
+
+**Recorrentes.** Ao criar um lançamento dá para repetir todo mês ou toda semana (2 a 36 vezes). Cada ocorrência vira um lançamento próprio, na sua data e com a divisão vigente nela, ligadas por `recurrence_id`. Editar mexe só na ocorrência; excluir pergunta se é "só este" ou "este e os próximos".
+
+**Duplicar.** Item: toque e segure na lista (ou o ícone de cópia ao editar) abre um lançamento novo já preenchido, com a data de hoje. Grupo: aba Divisão › Duplicar grupo (ou toque e segure na Home) cria um grupo com as mesmas pessoas, categorias e divisão vigente. Os lançamentos são opcionais e, se copiados, mantêm as cotas originais.
+
+**Resumo.** Aba do grupo com gasto total, entradas, saldo (entradas − gastos), quanto está pendente entre vocês, detalhe por pessoa e gasto por categoria com a parte de cada um. Pode ser por mês ou acumulado.
+
+**Emoji.** Grupos, categorias e lançamentos têm emoji. O lançamento herda o da categoria se não escolher um.
 
 **Convite.** Código de 6 caracteres (sem 0/O/1/I), mostrado como texto e QR com `splitpix://convite/CODIGO`. Quem entra escolhe "Sou a Paula" e herda os lançamentos já feitos com esse nome, ou entra como pessoa nova com 0% até ajustarem a divisão.
 
@@ -76,12 +84,13 @@ src/app/                 rotas (Expo Router)
   (app)/index.tsx        Home: grupos e saldo de cada um
   (app)/novo-grupo.tsx   nome, ícone, participantes, % padrão
   (app)/participar.tsx   código ou QR → "quem é você neste grupo?"
-  (app)/g/[id]/          grupo: abas Despesas · Saldos · Divisão
+  (app)/g/[id]/          grupo: abas Despesas · Saldos · Resumo · Divisão
     item.tsx             novo/editar lançamento (despesa, receita, transferência)
     regra.tsx            % do grupo ou de uma categoria, a partir de um mês
     convite.tsx          QR + código + compartilhar
+    duplicar.tsx         copiar o grupo (pessoas, categorias, divisão, lançamentos opcionais)
 src/components/          UI (tokens em src/theme.ts), abas do grupo, editor de %
-src/lib/                 supabase, api (queries + realtime), split, money, dates
+src/lib/                 supabase, api (queries + realtime), split, summary, money, dates
 supabase/migrations/     schema, RLS, funções, realtime
 supabase/tests/          testes do schema (PGlite)
 tests/                   testes da lógica do app
@@ -90,7 +99,6 @@ scripts/make-icons.py    gera ícone e splash a partir do logo
 
 ## Limites conhecidos da v0.1
 
-- Ícones de grupo/categoria são desenhos fixos; o PRD prevê seletor de emoji como no Tricount.
 - Data do lançamento usa setas dia a dia (sem calendário nativo).
 - Link de convite aberto sem estar logado leva ao login e perde o código — basta digitá-lo depois.
 - Sem notificações push, fotos de comprovante, exportação ou modo offline (fora do escopo da demo).

@@ -2,36 +2,44 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
+import { EmojiPicker } from '@/components/emoji-picker';
 import { Icon } from '@/components/icons';
 import {
-  Button, Card, Chip, ErrorText, Field, Header, IconButton, Input, Loading, Screen, Segmented, SplitBar,
+  Button, Card, Chip, EmojiTile, ErrorText, Field, Header, IconButton, Input, Loading, Screen, Segmented, SplitBar,
 } from '@/components/ui';
 import { useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
-import { addDays, shortDate, today } from '@/lib/dates';
+import { addDays, dayMonth, seriesDates, shortDate, today } from '@/lib/dates';
 import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/money';
 import { effectiveRule, previewSplit } from '@/lib/split';
-import type { Entry, EntryType, SplitMode } from '@/lib/types';
-import { colors, space, type } from '@/theme';
+import type { Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
+import { colors, defaultEmoji, space, type } from '@/theme';
 
-type Params = { id: string; entryId?: string; type?: EntryType; from?: string; to?: string; amount?: string };
+type Params = {
+  id: string; entryId?: string; duplicateOf?: string;
+  type?: EntryType; from?: string; to?: string; amount?: string;
+};
 
 export default function ItemScreen() {
   const params = useLocalSearchParams<Params>();
   const group = useGroup(params.id);
-  const entry = useEntry(params.id, params.entryId);
-  if (!group.data || (params.entryId && !entry.data)) return <Screen><Header /><Loading /></Screen>;
+  // Duplicar = abrir o formulário de novo lançamento já preenchido com outro.
+  const sourceId = params.entryId ?? params.duplicateOf;
+  const entry = useEntry(params.id, sourceId);
+  if (!group.data || (sourceId && !entry.data)) return <Screen><Header /><Loading /></Screen>;
   return <ItemForm params={params} detail={group.data} entry={entry.data ?? null} />;
 }
 
-/** Edição carrega o lançamento; novo usa padrões (ou o acerto sugerido pela aba Saldos). */
+/** Edição/duplicação carregam o lançamento; novo usa padrões (ou o acerto sugerido pela aba Saldos). */
 function initialState(detail: GroupDetail, entry: Entry | null, params: Params, meId: string | undefined) {
   const members = detail.members;
   const all = new Set(members.map((m) => m.id));
   if (entry) {
+    const duplicating = !!params.duplicateOf;
     return {
       kind: entry.type, title: entry.title, amount: entry.amount_cents, paidBy: entry.paid_by,
-      transferTo: entry.transfer_to ?? '', date: entry.occurred_on, categoryId: entry.category_id,
+      emoji: entry.emoji,
+      transferTo: entry.transfer_to ?? '', date: duplicating ? today() : entry.occurred_on, categoryId: entry.category_id,
       mode: entry.split_mode,
       participants: entry.shares.length ? new Set(entry.shares.map((s) => s.member_id)) : all,
       percent: Object.fromEntries(entry.shares.map((s) => [s.member_id, s.basis_points ?? 0])) as Record<string, number>,
@@ -43,6 +51,7 @@ function initialState(detail: GroupDetail, entry: Entry | null, params: Params, 
     kind: params.type ?? ('expense' as EntryType),
     title: params.type === 'transfer' ? 'Acerto' : '',
     amount: params.amount ? Number(params.amount) : 0,
+    emoji: null as string | null,
     paidBy: params.from ?? meId ?? members[0]?.id ?? '',
     transferTo: params.to ?? other?.id ?? '',
     date: today(),
@@ -74,6 +83,16 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
   const [participants, setParticipants] = useState<Set<string>>(init.participants);
   const [percent, setPercent] = useState<Record<string, number>>(init.percent);
   const [exact, setExact] = useState<Record<string, number>>(init.exact);
+  const [emoji, setEmoji] = useState<string | null>(init.emoji);
+  const [picking, setPicking] = useState(false);
+  const [repeatEvery, setRepeatEvery] = useState<RepeatEvery | 'none'>('none');
+  const [repeatCount, setRepeatCount] = useState(3);
+
+  const isEditing = !!entryId;
+  const category = detail.categories.find((c) => c.id === categoryId);
+  const shownEmoji = emoji ?? (kind === 'expense' ? category?.emoji ?? defaultEmoji.expense : defaultEmoji[kind]);
+  const repeating = !isEditing && repeatEvery !== 'none';
+  const dates = repeating ? seriesDates(date, repeatCount, repeatEvery) : [date];
 
   const rule = effectiveRule(detail.rules, categoryId, date);
   const ownCategoryRule = !!categoryId && rule?.category_id === categoryId;
@@ -116,15 +135,29 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
       splitMode: isTransfer ? 'default' : mode,
       participants: mode === 'default' || mode === 'equal' ? (allSelected ? null : [...participants]) : null,
       custom: mode === 'percent' ? percent : mode === 'exact' ? exact : null,
+      emoji,
+      repeatCount: repeating ? repeatCount : 1,
+      repeatEvery: repeating ? repeatEvery : 'month',
     });
     router.back();
   }
 
   function confirmDelete() {
+    const del = async (scope: 'one' | 'following') => {
+      await remove.mutateAsync({ entryId: entryId!, scope });
+      router.back();
+    };
+    const buttons = entry?.recurrence_id
+      ? [{ text: 'Só este', onPress: () => del('one') },
+         { text: 'Este e os próximos', style: 'destructive' as const, onPress: () => del('following') }]
+      : [{ text: 'Excluir', style: 'destructive' as const, onPress: () => del('one') }];
     Alert.alert('Excluir lançamento?', `"${title}" sai da lista e dos saldos de todos.`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: async () => { await remove.mutateAsync(entryId!); router.back(); } },
+      { text: 'Cancelar', style: 'cancel' }, ...buttons,
     ]);
+  }
+
+  function duplicate() {
+    router.replace({ pathname: '/g/[id]/item', params: { id, duplicateOf: entryId! } });
   }
 
   const sourceText =
@@ -138,8 +171,18 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         <ErrorText>{save.error?.message}</ErrorText>
         <Button title="Salvar" onPress={submit} disabled={errors.length > 0} loading={save.isPending} />
       </>}>
-        <Header title={entryId ? 'Editar lançamento' : 'Novo lançamento'}
-          right={entryId ? <IconButton name="trash" label="Excluir" color={colors.negative} onPress={confirmDelete} /> : undefined} />
+        <Header title={isEditing ? 'Editar' : params.duplicateOf ? 'Duplicar' : 'Novo lançamento'}
+          right={isEditing ? (
+            <View style={{ flexDirection: 'row' }}>
+              <IconButton name="copy" label="Duplicar" onPress={duplicate} />
+              <IconButton name="trash" label="Excluir" color={colors.negative} onPress={confirmDelete} />
+            </View>
+          ) : undefined} />
+        {isEditing && entry?.recurrence_total ? (
+          <Text style={{ fontSize: 13, color: colors.muted }}>
+            🔁 Ocorrência {entry.recurrence_index} de {entry.recurrence_total}. Alterações valem só para esta.
+          </Text>
+        ) : null}
 
         <Segmented<EntryType> accent value={kind} onChange={setKind} options={[
           { value: 'expense', label: 'Despesa' },
@@ -148,9 +191,13 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         ]} />
 
         <Field label="Título">
-          <Input value={title} onChangeText={setTitle} maxLength={80}
-            placeholder={isTransfer ? 'Ex.: Acerto outubro' : kind === 'income' ? 'Ex.: Reembolso' : 'Ex.: Mercado'} />
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <EmojiTile emoji={shownEmoji} size={56} onPress={() => setPicking(true)} label="Emoji do lançamento" />
+            <Input value={title} onChangeText={setTitle} maxLength={80} style={{ flex: 1 }}
+              placeholder={isTransfer ? 'Ex.: Acerto outubro' : kind === 'income' ? 'Ex.: Reembolso' : 'Ex.: Mercado'} />
+          </View>
         </Field>
+        <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji do lançamento" />
 
         <Field label="Valor">
           <Input big value={amount ? `R$ ${inputFromCents(amount)}` : ''} placeholder="R$ 0,00"
@@ -183,6 +230,30 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
             <IconButton name="chevron-right" label="Próximo dia" onPress={() => setDate(addDays(date, 1))} />
           </View>
         </Field>
+
+        {!isEditing ? (
+          <Field label="Repetir">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Chip label="Não" selected={repeatEvery === 'none'} onPress={() => setRepeatEvery('none')} />
+              <Chip label="Todo mês" selected={repeatEvery === 'month'} onPress={() => setRepeatEvery('month')} />
+              <Chip label="Toda semana" selected={repeatEvery === 'week'} onPress={() => setRepeatEvery('week')} />
+            </View>
+            {repeating ? (
+              <Card style={{ gap: space.sm }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>Quantas vezes</Text>
+                  <IconButton name="chevron-left" label="Menos vezes" onPress={() => setRepeatCount(Math.max(2, repeatCount - 1))} />
+                  <Text style={{ width: 40, textAlign: 'center', fontSize: 18, fontWeight: '700', color: colors.text }}>{repeatCount}×</Text>
+                  <IconButton name="chevron-right" label="Mais vezes" onPress={() => setRepeatCount(Math.min(36, repeatCount + 1))} />
+                </View>
+                <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+                  {dates.length <= 6 ? dates.map(dayMonth).join(' · ') : `${dayMonth(dates[0])} até ${dayMonth(dates[dates.length - 1])}`}
+                  {'\n'}Cria {repeatCount} lançamentos de {formatBRL(amount)} — {formatBRL(amount * repeatCount)} no total. Cada um usa a divisão vigente na sua data.
+                </Text>
+              </Card>
+            ) : null}
+          </Field>
+        ) : null}
 
         {!isTransfer ? (
           <>

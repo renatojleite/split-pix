@@ -3,10 +3,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { addMonths, monthStart } from '../src/lib/dates.ts';
+import { addMonths, monthStart, seriesDates } from '../src/lib/dates.ts';
 import { centsFromInput, formatBRL, formatPercent } from '../src/lib/money.ts';
 import { allocateCents, effectiveRule, previewSplit, settleUp } from '../src/lib/split.ts';
-import type { Rule } from '../src/lib/types.ts';
+import { summarize } from '../src/lib/summary.ts';
+import type { Category, Entry, Member, Rule } from '../src/lib/types.ts';
 
 const R = 'renato';
 const P = 'paula';
@@ -77,4 +78,46 @@ test('datas', () => {
   assert.equal(monthStart('2026-10-28'), '2026-10-01');
   assert.equal(addMonths('2026-12-01', 1), '2027-01-01');
   assert.equal(addMonths('2026-01-01', -1), '2025-12-01');
+});
+
+test('série recorrente: mesmo dia, ajustando fim de mês (igual ao banco)', () => {
+  assert.deepEqual(seriesDates('2026-10-31', 3, 'month'), ['2026-10-31', '2026-11-30', '2026-12-31']);
+  assert.deepEqual(seriesDates('2027-01-31', 2, 'month'), ['2027-01-31', '2027-02-28']);
+  assert.deepEqual(seriesDates('2026-11-02', 4, 'week').at(-1), '2026-11-23');
+});
+
+test('resumo: totais, por pessoa e por categoria batem com o exemplo do PRD', () => {
+  const m = (id: string, i: number): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: i });
+  const members = [m(R, 0), m(P, 1)];
+  const cat = (id: string, name: string, emoji: string): Category => ({ id, group_id: 'g', name, emoji, sort: 0 });
+  const categories = [cat('mor', 'Moradia', '🏠'), cat('mer', 'Mercado', '🛒'), cat('fil', 'Filhos', '🧒')];
+  const e = (type: Entry['type'], amount: number, paid: string, category: string | null, shares: [string, number][], to: string | null = null): Entry => ({
+    id: Math.random().toString(), group_id: 'g', type, title: 't', amount_cents: amount, paid_by: paid, transfer_to: to,
+    category_id: category, emoji: null, occurred_on: '2026-10-01', split_mode: 'default', recurrence_id: null,
+    recurrence_index: null, recurrence_total: null, updated_by: null, updated_at: '',
+    shares: shares.map(([member_id, share_cents]) => ({ member_id, share_cents, basis_points: null })),
+  });
+  const entries = [
+    e('expense', 200000, R, 'mor', [[R, 100000], [P, 100000]]),
+    e('expense', 80000, P, 'mer', [[R, 48000], [P, 32000]]),
+    e('expense', 35000, R, 'fil', [[R, 24500], [P, 10500]]),
+    e('expense', 20000, P, null, [[R, 10000], [P, 10000]]),
+    e('income', 10000, R, null, [[R, 5000], [P, 5000]]),
+  ];
+  const s = summarize(entries, members, categories);
+  assert.equal(s.spent, 335000);
+  assert.equal(s.income, 10000);
+  assert.equal(s.net, -325000);
+  const r = s.people.find((p) => p.memberId === R)!;
+  // Gastos: +52500. Receita: Renato recebeu 100 e a parte da Paula (50) é dela → −5000.
+  assert.equal(r.balance, 47500);
+  assert.equal(s.pending, 47500);
+  assert.deepEqual(s.transfers, [{ from: P, to: R, cents: 47500 }]);
+  assert.equal(s.categories[0].name, 'Moradia');
+  assert.equal(s.categories.find((c) => c.name === 'Sem categoria')?.cents, 20000);
+  assert.ok(Math.abs(s.categories.reduce((a, c) => a + c.ratio, 0) - 1) < 1e-9);
+
+  const settled = summarize([...entries, e('transfer', 47500, P, null, [], R)], members, categories);
+  assert.equal(settled.pending, 0);
+  assert.equal(settled.spent, 335000);
 });

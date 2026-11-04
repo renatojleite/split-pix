@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon, Logo } from '@/components/icons';
-import { Button, Card, ErrorText, IconTile, Input, Loading } from '@/components/ui';
+import { Button, Card, EmojiTile, ErrorText, Input, Loading } from '@/components/ui';
 import { useGroups, useProfile, useUpdateProfileName } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { describeMyBalance } from '@/lib/describe';
@@ -47,8 +47,9 @@ export default function Home() {
           const status = describeMyBalance(g.myBalance, g.me, g.members);
           return (
             <Card key={g.id} onPress={() => router.push({ pathname: '/g/[id]', params: { id: g.id } })}
+              onLongPress={() => groupActions(g.id, g.name)}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 18, borderRadius: 24 }}>
-              <IconTile icon={g.icon} />
+              <EmojiTile emoji={g.emoji} />
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={{ fontSize: 19, fontWeight: '600', color: colors.text }} numberOfLines={1}>{g.name}</Text>
                 <Text style={{
@@ -86,6 +87,23 @@ export default function Home() {
       </View>
     </SafeAreaView>
   );
+}
+
+/** Toque longo num grupo: atalhos. */
+function groupActions(id: string, name: string) {
+  const open = (path: '/g/[id]/duplicar' | '/g/[id]/convite') => router.push({ pathname: path, params: { id } });
+  if (Platform.OS === 'ios') {
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: name, options: ['Duplicar grupo', 'Convidar', 'Cancelar'], cancelButtonIndex: 2 },
+      (i) => (i === 0 ? open('/g/[id]/duplicar') : i === 1 ? open('/g/[id]/convite') : undefined),
+    );
+  } else {
+    Alert.alert(name, undefined, [
+      { text: 'Duplicar grupo', onPress: () => open('/g/[id]/duplicar') },
+      { text: 'Convidar', onPress: () => open('/g/[id]/convite') },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  }
 }
 
 function AskName({ userId }: { userId: string }) {

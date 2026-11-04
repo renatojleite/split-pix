@@ -10,7 +10,8 @@ import { effectiveRule } from '@/lib/split';
 import type { Rule } from '@/lib/types';
 import { colors, space } from '@/theme';
 import { Icon } from '../icons';
-import { Avatar, Button, Card, IconTile, Input, SectionTitle, SplitBar } from '../ui';
+import { EmojiPicker } from '../emoji-picker';
+import { Avatar, Button, Card, EmojiTile, Input, SectionTitle, SplitBar } from '../ui';
 
 export function SplitTab({ detail }: { detail: GroupDetail }) {
   const userId = useUserId();
@@ -23,6 +24,8 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
   const update = useUpdateGroup(group.id);
   const [newMember, setNewMember] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState<string | null>(null);
+  const [newEmoji, setNewEmoji] = useState('🏷️');
+  const [picking, setPicking] = useState(false);
 
   const bp = (rule: Rule | null, memberId: string) => rule?.shares.find((s) => s.member_id === memberId)?.basis_points ?? 0;
   const label = (rule: Rule | null) =>
@@ -61,7 +64,7 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
               style={{ paddingHorizontal: space.lg, paddingVertical: 12, gap: 6,
                 borderBottomWidth: i === categories.length - 1 ? 0 : 1, borderColor: colors.divider }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <IconTile icon={c.icon} size={28} />
+                <EmojiTile emoji={c.emoji} size={28} />
                 <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: colors.text }}>{c.name}</Text>
                 <Text style={{ fontSize: 15, color: own ? colors.text : colors.muted }}>
                   {own ? label(rule) : `padrão ${label(defaultRule)}`}
@@ -80,7 +83,8 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
         </Pressable>
       ) : (
         <InlineAdd value={newCategory} onChange={setNewCategory} placeholder="Nome da categoria" loading={addCategory.isPending}
-          onSave={async () => { await addCategory.mutateAsync(newCategory); setNewCategory(null); }}
+          emoji={newEmoji} onEmoji={() => setPicking(true)}
+          onSave={async () => { await addCategory.mutateAsync({ name: newCategory, emoji: newEmoji }); setNewCategory(null); setNewEmoji('🏷️'); }}
           onCancel={() => setNewCategory(null)} />
       )}
 
@@ -118,6 +122,11 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
         <Icon name="chevron-right" size={20} color={colors.primaryInk} />
       </Card>
 
+      <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setNewEmoji} title="Emoji da categoria" />
+
+      <Button variant="secondary" icon="copy" title="Duplicar grupo"
+        onPress={() => router.push({ pathname: '/g/[id]/duplicar', params: { id: group.id } })} />
+
       {isOwner ? (
         <Button variant="ghost" title={group.archived_at ? 'Desarquivar grupo' : 'Arquivar grupo'}
           onPress={() => Alert.alert(
@@ -131,13 +140,16 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
   );
 }
 
-function InlineAdd({ value, onChange, onSave, onCancel, placeholder, loading, hint }: {
+function InlineAdd({ value, onChange, onSave, onCancel, placeholder, loading, hint, emoji, onEmoji }: {
   value: string; onChange: (v: string) => void; onSave: () => void; onCancel: () => void;
-  placeholder: string; loading: boolean; hint?: string;
+  placeholder: string; loading: boolean; hint?: string; emoji?: string; onEmoji?: () => void;
 }) {
   return (
     <View style={{ gap: 8 }}>
-      <Input value={value} onChangeText={onChange} placeholder={placeholder} autoFocus maxLength={40} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {emoji && onEmoji ? <EmojiTile emoji={emoji} size={56} onPress={onEmoji} /> : null}
+        <Input value={value} onChangeText={onChange} placeholder={placeholder} autoFocus maxLength={40} style={{ flex: 1 }} />
+      </View>
       {hint ? <Text style={{ fontSize: 13, color: colors.muted }}>{hint}</Text> : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 48 }} onPress={onCancel} />

@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
-import { RefreshControl, SectionList, Text, View } from 'react-native';
+import { Alert, RefreshControl, SectionList, Text, View } from 'react-native';
 
-import { useEntries, type GroupDetail } from '@/lib/api';
+import { useDeleteEntry, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayLabel } from '@/lib/dates';
 import { formatBRL, formatPercent } from '@/lib/money';
 import type { Entry } from '@/lib/types';
-import { colors, space } from '@/theme';
-import { Card, ErrorText, IconTile, Loading } from '../ui';
+import { colors, defaultEmoji, space } from '@/theme';
+import { Card, EmojiTile, ErrorText, Loading } from '../ui';
 import { MonthNav } from './month-nav';
 
 export function ExpensesTab({ detail, month, onMonth }: {
@@ -49,10 +49,27 @@ export function ExpensesTab({ detail, month, onMonth }: {
     return `Pago por ${name(e.paid_by)} · ${ruleLabel(e)}`;
   }
 
-  function icon(e: Entry) {
-    if (e.type === 'transfer') return 'transfer';
-    if (e.type === 'income') return 'income';
-    return category(e.category_id)?.icon ?? 'tag';
+  function emojiOf(e: Entry) {
+    if (e.emoji) return e.emoji;
+    if (e.type !== 'expense') return defaultEmoji[e.type];
+    return category(e.category_id)?.emoji ?? defaultEmoji.expense;
+  }
+
+  const remove = useDeleteEntry(detail.group.id);
+  const openItem = (params: Record<string, string>) =>
+    router.push({ pathname: '/g/[id]/item', params: { id: detail.group.id, ...params } });
+
+  function actions(e: Entry) {
+    const del = (scope: 'one' | 'following') => remove.mutate({ entryId: e.id, scope });
+    const deleteButtons = e.recurrence_id
+      ? [{ text: 'Excluir só este', onPress: () => del('one') },
+         { text: 'Excluir este e os próximos', style: 'destructive' as const, onPress: () => del('following') }]
+      : [{ text: 'Excluir', style: 'destructive' as const, onPress: () => del('one') }];
+    Alert.alert(e.title, undefined, [
+      { text: 'Duplicar', onPress: () => openItem({ duplicateOf: e.id }) },
+      ...deleteButtons,
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
   }
 
   return (
@@ -69,6 +86,9 @@ export function ExpensesTab({ detail, month, onMonth }: {
             <Stat label="Minha parte" value={formatBRL(mine)} />
             <Stat label="Total do mês" value={formatBRL(total)} />
           </View>
+          {list.length > 0 ? (
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para duplicar ou excluir</Text>
+          ) : null}
           {entries.isLoading ? <Loading /> : null}
           <ErrorText>{entries.error?.message}</ErrorText>
         </View>
@@ -84,12 +104,14 @@ export function ExpensesTab({ detail, month, onMonth }: {
         <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSoft, paddingTop: space.md }}>{section.title}</Text>
       )}
       renderItem={({ item: e }) => (
-        <Card onPress={() => router.push({ pathname: '/g/[id]/item', params: { id: detail.group.id, entryId: e.id } })}
+        <Card onPress={() => openItem({ entryId: e.id })} onLongPress={() => actions(e)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-          <IconTile icon={icon(e)} size={40} />
+          <EmojiTile emoji={emojiOf(e)} size={40} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text }} numberOfLines={1}>{e.title}</Text>
-            <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>{subtitle(e)}</Text>
+            <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>
+              {e.recurrence_total ? `🔁 ${e.recurrence_index}/${e.recurrence_total} · ` : ''}{subtitle(e)}
+            </Text>
           </View>
           <Text style={{ fontSize: 17, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
             {formatBRL(e.amount_cents)}

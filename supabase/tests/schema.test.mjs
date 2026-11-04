@@ -42,11 +42,11 @@ async function fails(uid, sql, params = []) {
 
 ok((await db.query('select count(*)::int n from profiles')).rows[0].n === 3, 'perfil criado por trigger');
 
-const [{ g }] = await as(A, `select create_group('Casa', 'home', 'Renato', array['Paula'], array[6000, 4000]) g`);
+const [{ g }] = await as(A, `select create_group('Casa', '🏠', 'Renato', array['Paula'], array[6000, 4000]) g`);
 const members = await as(A, `select id, display_name, role from group_members where group_id = $1 order by position`, [g]);
 const R = members[0].id, P = members[1].id;
 ok(members.length === 2 && members[0].role === 'owner', 'grupo criado com dono + placeholder');
-ok((await as(A, `select count(*)::int n from categories where group_id = $1`, [g]))[0].n === 7, '7 categorias semeadas');
+ok((await as(A, `select count(*)::int n from categories where group_id = $1`, [g]))[0].n === 8, '8 categorias semeadas');
 
 const cat = async (name) => (await as(A, `select id from categories where group_id=$1 and name=$2`, [g, name]))[0].id;
 const moradia = await cat('Moradia'), mercado = await cat('Mercado'), filhos = await cat('Filhos'), lazer = await cat('Lazer');
@@ -138,6 +138,52 @@ ok(anaBp === 0, 'novo membro entra com 0% até ajustarem a divisão');
 // Exclusão lógica
 await as(A, `select delete_entry($1)`, [nov]);
 ok((await as(A, `select deleted_at is not null d from entries where id=$1`, [nov]))[0].d, 'excluir marca deleted_at');
+
+// ───── Emoji, recorrência, duplicar ─────
+ok((await as(A, `select emoji from groups where id=$1`, [g]))[0].emoji === '🏠', 'grupo tem emoji');
+ok((await as(A, `select emoji from categories where id=$1`, [filhos]))[0].emoji === '🧒', 'categoria tem emoji');
+
+const [{ id: serie }] = await as(A, `select save_entry(p_group_id=>$1, p_type=>'expense', p_title=>'Escola', p_amount_cents=>90000,
+  p_paid_by=>$2, p_occurred_on=>'2026-10-31', p_category_id=>$3, p_emoji=>'🎒', p_repeat_count=>3, p_repeat_every=>'month') id`, [g, R, filhos]);
+const occ = await as(A, `select occurred_on::text d, recurrence_index i, recurrence_total t, emoji from entries
+  where recurrence_id = (select recurrence_id from entries where id=$1) order by recurrence_index`, [serie]);
+ok(occ.length === 3 && occ.every((o) => o.t === 3 && o.emoji === '🎒'), 'recorrente gera 3 ocorrências com emoji');
+ok(occ.map((o) => o.d).join(',') === '2026-10-31,2026-11-30,2026-12-31', `datas mensais ajustam fim de mês (${occ.map((o) => o.d)})`);
+const occShares = await as(A, `select e.recurrence_index i, s.share_cents c from entries e join entry_shares s on s.entry_id=e.id
+  where e.recurrence_id=(select recurrence_id from entries where id=$1) and s.member_id=$2 order by 1`, [serie, R]);
+ok(occShares.every((x) => Number(x.c) === 63000), 'cada ocorrência usa a regra Filhos 70/30');
+
+const [{ id: semanal }] = await as(A, `select save_entry(p_group_id=>$1, p_type=>'expense', p_title=>'Feira', p_amount_cents=>5000,
+  p_paid_by=>$2, p_occurred_on=>'2026-11-02', p_repeat_count=>4, p_repeat_every=>'week') id`, [g, P]);
+const lastWeek = await as(A, `select max(occurred_on)::text d from entries where recurrence_id=(select recurrence_id from entries where id=$1)`, [semanal]);
+ok(lastWeek[0].d === '2026-11-23', 'recorrência semanal');
+ok(!!(await fails(A, `select save_entry(p_group_id=>$1, p_type=>'expense', p_title=>'x', p_amount_cents=>1, p_paid_by=>$2, p_occurred_on=>'2026-11-02', p_repeat_count=>99)`, [g, R])), 'repetição acima de 36 recusada');
+
+const [{ id: second }] = await as(A, `select id from entries where recurrence_id=(select recurrence_id from entries where id=$1) and recurrence_index=2`, [serie]);
+const [{ n: removed }] = await as(A, `select delete_entry($1, 'following') n`, [second]);
+ok(removed === 2, 'excluir "este e os próximos" apaga 2 de 3');
+ok((await as(A, `select deleted_at is null alive from entries where id=$1`, [serie]))[0].alive, 'a primeira ocorrência continua');
+
+const [{ id: dup }] = await as(A, `select duplicate_group($1, 'Casa 2027', '🏡') id`, [g]);
+const dupMembers = await as(A, `select display_name, user_id, role from group_members where group_id=$1 order by position`, [dup]);
+ok(dupMembers.length === 3 && dupMembers[0].role === 'owner' && dupMembers[1].user_id === B, 'grupo duplicado leva as mesmas pessoas (com conta)');
+ok((await as(B, `select count(*)::int n from groups where id=$1`, [dup]))[0].n === 1, 'Paula já vê o grupo duplicado');
+ok((await as(A, `select count(*)::int n from entries where group_id=$1`, [dup]))[0].n === 0, 'sem copiar lançamentos por padrão');
+const dupRule = await as(A, `select s.basis_points bp from split_rules r join split_rule_shares s on s.rule_id=r.id
+  join group_members m on m.id=s.member_id where r.group_id=$1 and r.category_id is null and m.display_name='Renato'`, [dup]);
+ok(dupRule.length === 1 && dupRule[0].bp === 5000, 'divisão vigente (50/50) copiada');
+const dupFilhos = await as(A, `select count(*)::int n from split_rules r join categories c on c.id=r.category_id where r.group_id=$1 and c.name='Filhos'`, [dup]);
+ok(dupFilhos[0].n === 1, 'regra da categoria copiada');
+ok((await as(A, `select invite_code <> $2 diff from groups where id=$1`, [dup, code]))[0].diff, 'grupo duplicado tem código próprio');
+
+const [{ id: dup2 }] = await as(A, `select duplicate_group($1, 'Casa cópia', null, true) id`, [g]);
+const srcCount = (await as(A, `select count(*)::int n from entries where group_id=$1 and deleted_at is null`, [g]))[0].n;
+ok((await as(A, `select count(*)::int n from entries where group_id=$1`, [dup2]))[0].n === srcCount, 'com cópia: mesmos lançamentos');
+const bSrc = await as(A, `select sum(balance_cents)::bigint b from member_balances b join group_members m on m.id=b.member_id where b.group_id=$1 and m.display_name='Renato'`, [g]);
+const bDup = await as(A, `select sum(balance_cents)::bigint b from member_balances b join group_members m on m.id=b.member_id where b.group_id=$1 and m.display_name='Renato'`, [dup2]);
+ok(Number(bSrc[0].b) === Number(bDup[0].b), `saldos iguais no grupo copiado (${bSrc[0].b} = ${bDup[0].b})`);
+ok(!!(await fails(C, `select duplicate_group($1, 'hack')`, ['00000000-0000-0000-0000-000000000999'])), 'não duplica grupo alheio');
+ok(!!(await fails(A, `select write_entry(null,$1,'expense','x',null,1,$2,null,null,'2026-11-01','default',null,null,null,null,null)`, [g, R])), 'write_entry interna não exposta');
 
 console.log(failures ? `\n${failures} falha(s)` : '\ntodos os testes passaram');
 process.exit(failures ? 1 : 0);

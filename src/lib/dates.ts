@@ -45,3 +45,25 @@ export function shortDate(iso: string): string {
   if (iso === addDays(t, -1)) return 'Ontem';
   return `${d} ${SHORT[m - 1]} ${y}`;
 }
+
+/** Soma n meses mantendo o dia; se o mês não tem o dia, usa o último (igual ao Postgres). */
+export function addMonthsKeepDay(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const total = y * 12 + (m - 1) + n;
+  const year = Math.floor(total / 12);
+  const month = (total % 12) + 1;
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${year}-${pad(month)}-${pad(Math.min(d, last))}`;
+}
+
+/** Datas de uma série recorrente a partir da primeira. */
+export function seriesDates(first: string, count: number, every: 'month' | 'week'): string[] {
+  return Array.from({ length: count }, (_, i) =>
+    every === 'week' ? addDays(first, 7 * i) : addMonthsKeepDay(first, i),
+  );
+}
+
+export function dayMonth(iso: string): string {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${d} ${SHORT[m - 1]}`;
+}

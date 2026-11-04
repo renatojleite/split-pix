@@ -4,10 +4,11 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icons';
 import { PercentEditor, equalBps } from '@/components/percent-editor';
-import { Button, Card, ErrorText, Field, Header, IconTile, Input, Loading, Screen } from '@/components/ui';
+import { EmojiPicker } from '@/components/emoji-picker';
+import { Button, Card, EmojiTile, ErrorText, Field, Header, Input, Loading, Screen } from '@/components/ui';
 import { useCreateGroup, useProfile } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
-import { colors, groupIcons, space } from '@/theme';
+import { colors, space } from '@/theme';
 
 const COLORS = ['#2563EB', '#F59E0B', '#10B981', '#8B5CF6', '#EF4444', '#14B8A6', '#EC4899', '#64748B'];
 
@@ -22,7 +23,8 @@ function NewGroupForm({ initialName }: { initialName: string }) {
   const create = useCreateGroup();
 
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState<string>('home');
+  const [emoji, setEmoji] = useState('🏠');
+  const [picking, setPicking] = useState(false);
   const [myName, setMyName] = useState(initialName);
   const [others, setOthers] = useState<string[]>(['']);
   const [bps, setBps] = useState<number[]>([5000, 5000]);
@@ -38,7 +40,7 @@ function NewGroupForm({ initialName }: { initialName: string }) {
     name.trim() && myName.trim() && others.every((o) => o.trim()) && bps.reduce((a, b) => a + b, 0) === 10000;
 
   async function submit() {
-    const id = await create.mutateAsync({ name, icon, myName, others, basisPoints: bps });
+    const id = await create.mutateAsync({ name, emoji, myName, others, basisPoints: bps });
     router.replace({ pathname: '/g/[id]', params: { id } });
   }
 
@@ -47,20 +49,12 @@ function NewGroupForm({ initialName }: { initialName: string }) {
       <Header title="Novo grupo" />
 
       <Field label="Nome do grupo">
-        <Input value={name} onChangeText={setName} placeholder="Ex.: Casa" maxLength={60} autoFocus />
-      </Field>
-
-      <Field label="Ícone">
-        <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
-          {groupIcons.map((i) => (
-            <Pressable key={i} onPress={() => setIcon(i)} accessibilityRole="button"
-              accessibilityLabel={`Ícone ${i}`} accessibilityState={{ selected: icon === i }}
-              style={{ borderRadius: 16, borderWidth: 2, borderColor: icon === i ? colors.primary : 'transparent', padding: 2 }}>
-              <IconTile icon={i} size={48} />
-            </Pressable>
-          ))}
+        <View style={{ flexDirection: 'row', gap: space.sm }}>
+          <EmojiTile emoji={emoji} size={56} onPress={() => setPicking(true)} label="Emoji do grupo" />
+          <Input value={name} onChangeText={setName} placeholder="Ex.: Casa" maxLength={60} autoFocus style={{ flex: 1 }} />
         </View>
       </Field>
+      <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji do grupo" />
 
       <Field label="Participantes">
         <Card style={{ padding: 0 }}>

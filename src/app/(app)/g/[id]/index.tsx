@@ -6,12 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BalancesTab } from '@/components/group/balances-tab';
 import { ExpensesTab } from '@/components/group/expenses-tab';
 import { SplitTab } from '@/components/group/split-tab';
-import { Button, Header, IconButton, IconTile, Loading, Segmented } from '@/components/ui';
+import { SummaryTab } from '@/components/group/summary-tab';
+import { Button, EmojiTile, Header, IconButton, Loading, Segmented } from '@/components/ui';
 import { useGroup, useGroupRealtime } from '@/lib/api';
 import { monthStart, today } from '@/lib/dates';
 import { colors, space } from '@/theme';
 
-type Tab = 'despesas' | 'saldos' | 'divisao';
+type Tab = 'despesas' | 'saldos' | 'resumo' | 'divisao';
 
 export default function GroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,7 +37,7 @@ export default function GroupScreen() {
         <Header
           center={
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <IconTile icon={g.icon} size={36} />
+              <EmojiTile emoji={g.emoji} size={36} />
               <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }} numberOfLines={1}>{g.name}</Text>
             </View>
           }
@@ -45,6 +46,7 @@ export default function GroupScreen() {
         <Segmented<Tab> value={tab} onChange={setTab} options={[
           { value: 'despesas', label: 'Despesas' },
           { value: 'saldos', label: 'Saldos' },
+          { value: 'resumo', label: 'Resumo' },
           { value: 'divisao', label: 'Divisão' },
         ]} />
       </View>
@@ -52,6 +54,7 @@ export default function GroupScreen() {
       <View style={{ flex: 1 }}>
         {tab === 'despesas' ? <ExpensesTab detail={group.data} month={month} onMonth={setMonth} /> : null}
         {tab === 'saldos' ? <BalancesTab detail={group.data} month={month} onMonth={setMonth} /> : null}
+        {tab === 'resumo' ? <SummaryTab detail={group.data} month={month} onMonth={setMonth} /> : null}
         {tab === 'divisao' ? <SplitTab detail={group.data} /> : null}
       </View>
 

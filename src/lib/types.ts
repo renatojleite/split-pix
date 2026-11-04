@@ -1,4 +1,5 @@
 export type EntryType = 'expense' | 'income' | 'transfer';
+export type RepeatEvery = 'month' | 'week';
 export type SplitMode = 'default' | 'equal' | 'percent' | 'exact';
 
 export type Profile = { id: string; name: string; email: string | null };
@@ -6,7 +7,7 @@ export type Profile = { id: string; name: string; email: string | null };
 export type Group = {
   id: string;
   name: string;
-  icon: string;
+  emoji: string;
   currency: string;
   invite_code: string;
   created_by: string;
@@ -24,7 +25,7 @@ export type Member = {
   position: number;
 };
 
-export type Category = { id: string; group_id: string; name: string; icon: string; sort: number };
+export type Category = { id: string; group_id: string; name: string; emoji: string; sort: number };
 
 export type RuleShare = { member_id: string; basis_points: number };
 
@@ -47,8 +48,12 @@ export type Entry = {
   paid_by: string;
   transfer_to: string | null;
   category_id: string | null;
+  emoji: string | null;
   occurred_on: string;
   split_mode: SplitMode;
+  recurrence_id: string | null;
+  recurrence_index: number | null;
+  recurrence_total: number | null;
   updated_by: string | null;
   updated_at: string;
   shares: EntryShare[];
@@ -59,7 +64,7 @@ export type Balance = { member_id: string; month: string; balance_cents: number 
 export type InvitePreview = {
   group_id: string;
   name: string;
-  icon: string;
+  emoji: string;
   already_member: boolean;
   unclaimed: { id: string; display_name: string }[];
 };

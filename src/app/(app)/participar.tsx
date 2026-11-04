@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { Button, Card, ErrorText, Field, Header, IconTile, Input, Screen } from '@/components/ui';
+import { Button, Card, EmojiTile, ErrorText, Field, Header, Input, Screen } from '@/components/ui';
 import { previewInvite, useAcceptInvite } from '@/lib/api';
 import type { InvitePreview } from '@/lib/types';
 import { colors, space, type } from '@/theme';
@@ -127,7 +127,7 @@ function Claim({ invite, code, onBack }: { invite: InvitePreview; code: string; 
         <Pressable onPress={onBack} hitSlop={8}><Text style={{ color: colors.primary, fontWeight: '600', fontSize: 16 }}>Outro código</Text></Pressable>
       </View>
       <View style={{ alignItems: 'center', gap: 12 }}>
-        <IconTile icon={invite.icon} size={72} />
+        <EmojiTile emoji={invite.emoji} size={72} />
         <Text style={type.title}>{invite.name}</Text>
       </View>
       <Text style={type.label}>Quem é você neste grupo?</Text>

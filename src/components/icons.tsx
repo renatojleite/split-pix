@@ -5,7 +5,7 @@ import { colors } from '@/theme';
 export type IconName =
   | 'back' | 'chevron-right' | 'chevron-left' | 'plus' | 'share' | 'qr' | 'check' | 'close'
   | 'home' | 'heart' | 'plane' | 'gift' | 'cart' | 'star' | 'bolt' | 'child' | 'party' | 'car'
-  | 'tag' | 'transfer' | 'income' | 'trash' | 'logout' | 'edit' | 'camera';
+  | 'tag' | 'transfer' | 'income' | 'trash' | 'logout' | 'edit' | 'camera' | 'copy' | 'repeat' | 'chart';
 
 const paths: Record<IconName, (c: string) => React.ReactNode> = {
   back: () => <Path d="M19 12H5M12 19l-7-7 7-7" />,
@@ -68,6 +68,13 @@ const paths: Record<IconName, (c: string) => React.ReactNode> = {
   trash: () => <Path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
   logout: () => <Path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11" />,
   edit: () => <Path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" />,
+  copy: () => (
+    <>
+      <Rect x={8} y={8} width={12} height={12} rx={2} /><Path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" />
+    </>
+  ),
+  repeat: () => <Path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4" />,
+  chart: () => <Path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
 };
 
 export function Icon({

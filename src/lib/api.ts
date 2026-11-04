@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { addMonths } from './dates';
 import { supabase } from './supabase';
 import type {
-  Balance, Category, Entry, EntryType, Group, InvitePreview, Member, Profile, Rule, SplitMode,
+  Balance, Category, Entry, EntryType, Group, InvitePreview, Member, Profile, RepeatEvery, Rule, SplitMode,
 } from './types';
 
 const keys = {
@@ -99,11 +99,11 @@ export function useGroup(groupId: string) {
 export function useCreateGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; icon: string; myName: string; others: string[]; basisPoints: number[] }) =>
+    mutationFn: async (input: { name: string; emoji: string; myName: string; others: string[]; basisPoints: number[] }) =>
       must(
         await supabase.rpc('create_group', {
           p_name: input.name.trim(),
-          p_icon: input.icon,
+          p_emoji: input.emoji,
           p_my_name: input.myName.trim(),
           p_other_names: input.others.map((o) => o.trim()),
           p_basis_points: input.basisPoints,
@@ -119,12 +119,28 @@ export function useCreateGroup() {
 export function useUpdateGroup(groupId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (patch: Partial<Pick<Group, 'name' | 'icon' | 'archived_at'>>) =>
+    mutationFn: async (patch: Partial<Pick<Group, 'name' | 'emoji' | 'archived_at'>>) =>
       must(await supabase.from('groups').update(patch).eq('id', groupId)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.groups });
       qc.invalidateQueries({ queryKey: keys.group(groupId) });
     },
+  });
+}
+
+export function useDuplicateGroup(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; emoji: string; copyEntries: boolean }) =>
+      must(
+        await supabase.rpc('duplicate_group', {
+          p_group_id: groupId,
+          p_name: input.name.trim(),
+          p_emoji: input.emoji,
+          p_copy_entries: input.copyEntries,
+        }),
+      ) as string,
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.groups }),
   });
 }
 
@@ -167,11 +183,11 @@ export function useAddMember(groupId: string) {
 export function useAddCategory(groupId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (name: string) =>
+    mutationFn: async ({ name, emoji }: { name: string; emoji: string }) =>
       must(
         await supabase
           .from('categories')
-          .insert({ group_id: groupId, name: name.trim(), icon: 'tag', sort: 100 })
+          .insert({ group_id: groupId, name: name.trim(), emoji, sort: 100 })
           .select('id')
           .single(),
       ) as { id: string },
@@ -210,7 +226,7 @@ export function useClearCategoryRule(groupId: string) {
 // ───────────── Lançamentos ─────────────
 
 const ENTRY_COLUMNS =
-  'id, group_id, type, title, amount_cents, paid_by, transfer_to, category_id, occurred_on, split_mode, updated_by, updated_at, shares:entry_shares(member_id, share_cents, basis_points)';
+  'id, group_id, type, title, emoji, amount_cents, paid_by, transfer_to, category_id, occurred_on, split_mode, recurrence_id, recurrence_index, recurrence_total, updated_by, updated_at, shares:entry_shares(member_id, share_cents, basis_points)';
 
 export function useEntries(groupId: string, month: string) {
   return useQuery({
@@ -226,6 +242,23 @@ export function useEntries(groupId: string, month: string) {
           .lt('occurred_on', addMonths(month, 1))
           .order('occurred_on', { ascending: false })
           .order('created_at', { ascending: false }),
+      ) as Entry[],
+  });
+}
+
+/** Todos os lançamentos do grupo (para o resumo acumulado). */
+export function useAllEntries(groupId: string, enabled = true) {
+  return useQuery({
+    queryKey: keys.entries(groupId, 'all'),
+    enabled,
+    queryFn: async () =>
+      must(
+        await supabase
+          .from('entries')
+          .select(ENTRY_COLUMNS)
+          .eq('group_id', groupId)
+          .is('deleted_at', null)
+          .order('occurred_on', { ascending: false }),
       ) as Entry[],
   });
 }
@@ -251,6 +284,9 @@ export type SaveEntryInput = {
   splitMode: SplitMode;
   participants?: string[] | null;
   custom?: Record<string, number> | null;
+  emoji?: string | null;
+  repeatCount?: number;
+  repeatEvery?: RepeatEvery;
 };
 
 export function useSaveEntry(groupId: string) {
@@ -271,6 +307,9 @@ export function useSaveEntry(groupId: string) {
           p_split_mode: e.splitMode,
           p_participants: e.participants ?? null,
           p_custom: e.custom ?? null,
+          p_emoji: e.emoji ?? null,
+          p_repeat_count: e.repeatCount ?? 1,
+          p_repeat_every: e.repeatEvery ?? 'month',
         }),
       ) as string,
     onSuccess: () => {
@@ -283,7 +322,8 @@ export function useSaveEntry(groupId: string) {
 export function useDeleteEntry(groupId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (entryId: string) => must(await supabase.rpc('delete_entry', { p_id: entryId })),
+    mutationFn: async ({ entryId, scope = 'one' }: { entryId: string; scope?: 'one' | 'following' }) =>
+      must(await supabase.rpc('delete_entry', { p_id: entryId, p_scope: scope })) as number,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.group(groupId) });
       qc.invalidateQueries({ queryKey: keys.groups });

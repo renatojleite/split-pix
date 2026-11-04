@@ -32,22 +32,5 @@ export const type = {
   caption: { fontSize: 13, color: colors.muted },
 };
 
-// Cores e ícones disponíveis para grupos (o app final pode trocar por emoji).
-export const groupIcons = ['home', 'heart', 'plane', 'gift', 'cart', 'star'] as const;
-export type GroupIcon = (typeof groupIcons)[number];
-
-export const iconTints: Record<string, { bg: string; ink: string }> = {
-  home: { bg: '#DBEAFE', ink: '#1D4ED8' },
-  heart: { bg: '#FCE7F3', ink: '#BE185D' },
-  plane: { bg: '#FFEDD5', ink: '#C2410C' },
-  gift: { bg: '#DCFCE7', ink: '#15803D' },
-  cart: { bg: '#DCFCE7', ink: '#15803D' },
-  star: { bg: '#FEF9C3', ink: '#A16207' },
-  bolt: { bg: '#FEF9C3', ink: '#A16207' },
-  child: { bg: '#FFEDD5', ink: '#C2410C' },
-  party: { bg: '#F3E8FF', ink: '#7E22CE' },
-  car: { bg: '#E0F2FE', ink: '#0369A1' },
-  tag: { bg: '#F4F4F5', ink: '#3F3F46' },
-  transfer: { bg: '#E0E7FF', ink: '#3730A3' },
-  income: { bg: '#DCFCE7', ink: '#15803D' },
-};
+// Emoji padrão quando o item não tem o seu nem a categoria.
+export const defaultEmoji = { expense: '🧾', income: '💰', transfer: '🔁', group: '🏠' } as const;

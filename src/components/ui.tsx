@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, iconTints, radius, space, type } from '@/theme';
+import { colors, radius, space, type } from '@/theme';
 import { Icon, type IconName } from './icons';
 
 // ───────────── Layout ─────────────
@@ -144,25 +144,33 @@ export function Input(props: TextInputProps & { big?: boolean }) {
 
 // ───────────── Conteúdo ─────────────
 
-export function Card({ children, style, onPress }: {
-  children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void;
+export function Card({ children, style, onPress, onLongPress }: {
+  children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; onLongPress?: () => void;
 }) {
   if (!onPress) return <View style={[styles.card, style]}>{children}</View>;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button"
+    <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={350} accessibilityRole="button"
       style={({ pressed }) => [styles.card, style, pressed && { opacity: 0.7 }]}>
       {children}
     </Pressable>
   );
 }
 
-export function IconTile({ icon, size = 52 }: { icon: string; size?: number }) {
-  const tint = iconTints[icon] ?? iconTints.tag;
-  return (
-    <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: tint.bg,
+export function EmojiTile({ emoji, size = 52, onPress, label }: {
+  emoji: string; size?: number; onPress?: () => void; label?: string;
+}) {
+  const tile = (
+    <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: onPress ? colors.card : '#EEF0F3',
       alignItems: 'center', justifyContent: 'center' }}>
-      <Icon name={icon as IconName} size={size * 0.5} color={tint.ink} />
+      <Text style={{ fontSize: size * 0.52, lineHeight: size * 0.68 }}>{emoji}</Text>
     </View>
+  );
+  if (!onPress) return tile;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label ?? 'Escolher emoji'} onPress={onPress}
+      style={({ pressed }) => pressed && { opacity: 0.6 }}>
+      {tile}
+    </Pressable>
   );
 }
 
@@ -227,7 +235,7 @@ export const styles = StyleSheet.create({
   segment: { flex: 1, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   segmentOn: { backgroundColor: '#FFFFFF', elevation: 1, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
   segmentAccent: { backgroundColor: colors.primary },
-  segmentText: { fontSize: 15, color: colors.textSoft, fontWeight: '500' },
+  segmentText: { fontSize: 14, color: colors.textSoft, fontWeight: '500' },
   input: { height: 56, borderRadius: radius.input, backgroundColor: colors.card, paddingHorizontal: space.lg, fontSize: 17, color: colors.text },
   inputBig: { height: 64, fontSize: 30, fontWeight: '700' },
   card: { borderRadius: radius.row, backgroundColor: colors.card, padding: space.lg },
