@@ -185,6 +185,22 @@ ok(Number(bSrc[0].b) === Number(bDup[0].b), `saldos iguais no grupo copiado (${b
 ok(!!(await fails(C, `select duplicate_group($1, 'hack')`, ['00000000-0000-0000-0000-000000000999'])), 'não duplica grupo alheio');
 ok(!!(await fails(A, `select write_entry(null,$1,'expense','x',null,1,$2,null,null,'2026-11-01','default',null,null,null,null,null)`, [g, R])), 'write_entry interna não exposta');
 
+// Editar e excluir categoria
+await as(A, `update categories set name='Moradia e contas', emoji='🏡' where id=$1`, [moradia]);
+ok((await as(A, `select name from categories where id=$1`, [moradia]))[0].name === 'Moradia e contas', 'membro renomeia categoria');
+const D = '00000000-0000-0000-0000-00000000000d';
+await db.exec(`reset role; insert into auth.users (id, email) values ('${D}', 'outsider@x.com');`);
+await as(D, `update categories set name='Hack' where id=$1`, [filhos]);
+ok((await as(A, `select name from categories where id=$1`, [filhos]))[0].name === 'Filhos', 'quem não é do grupo não renomeia');
+const filhosEntries = (await as(A, `select count(*)::int n from entries where category_id=$1`, [filhos]))[0].n;
+const [{ b: before }] = await as(A, `select sum(balance_cents)::bigint b from member_balances where group_id=$1 and member_id=$2`, [g, R]);
+await as(A, `delete from categories where id=$1`, [filhos]);
+ok((await as(A, `select count(*)::int n from categories where id=$1`, [filhos]))[0].n === 0, 'categoria excluída');
+ok((await as(A, `select count(*)::int n from entries where title='Natação Ber' and category_id is null`))[0].n === 1 && filhosEntries > 0, 'lançamentos ficam sem categoria');
+ok((await as(A, `select count(*)::int n from split_rules where category_id=$1`, [filhos]))[0].n === 0, 'regra da categoria removida');
+const [{ b: after }] = await as(A, `select sum(balance_cents)::bigint b from member_balances where group_id=$1 and member_id=$2`, [g, R]);
+ok(Number(before) === Number(after), 'saldos não mudam ao excluir categoria');
+
 ok(!!(await (async () => { try { await db.exec(`reset role; set role anon;`); await db.query(`select preview_invite('AAAAAA')`); return null; } catch (e) { return e.message; } finally { await db.exec('reset role;'); } })()), 'sem login não chama funções');
 
 console.log(failures ? `\n${failures} falha(s)` : '\ntodos os testes passaram');

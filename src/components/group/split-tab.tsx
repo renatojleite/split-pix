@@ -55,6 +55,9 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
       </Card>
 
       <SectionTitle>Por categoria</SectionTitle>
+      <Text style={{ fontSize: 13, color: colors.muted, marginTop: -4 }}>
+        Toque numa categoria para mudar nome, emoji, % ou excluir.
+      </Text>
       <Card style={{ padding: 0 }}>
         {categories.map((c, i) => {
           const own = rules.some((r) => r.category_id === c.id);

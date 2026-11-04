@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
+import { DateField } from '@/components/date-field';
 import { EmojiPicker } from '@/components/emoji-picker';
 import { Icon } from '@/components/icons';
 import {
@@ -9,7 +10,7 @@ import {
 } from '@/components/ui';
 import { useAddCategory, useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
-import { addDays, dayMonth, seriesDates, shortDate, today } from '@/lib/dates';
+import { dayMonth, seriesDates, today } from '@/lib/dates';
 import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/money';
 import { effectiveRule, previewSplit } from '@/lib/split';
 import type { Category, Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
@@ -228,11 +229,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         ) : null}
 
         <Field label="Quando">
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, height: 56 }}>
-            <IconButton name="chevron-left" label="Dia anterior" onPress={() => setDate(addDays(date, -1))} />
-            <Text style={{ flex: 1, textAlign: 'center', fontSize: 17, color: colors.text }}>{shortDate(date)}</Text>
-            <IconButton name="chevron-right" label="Próximo dia" onPress={() => setDate(addDays(date, 1))} />
-          </View>
+          <DateField value={date} onChange={setDate} />
         </Field>
 
         {!isEditing ? (

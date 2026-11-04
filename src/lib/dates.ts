@@ -67,3 +67,16 @@ export function dayMonth(iso: string): string {
   const [, m, d] = iso.split('-').map(Number);
   return `${d} ${SHORT[m - 1]}`;
 }
+
+/** Dias do mês em semanas (domingo primeiro), para o calendário; null = célula vazia. */
+export function monthGrid(month: string): (string | null)[][] {
+  const [y, m] = month.split('-').map(Number);
+  const firstWeekday = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const cells: (string | null)[] = [
+    ...Array.from({ length: firstWeekday }, () => null),
+    ...Array.from({ length: days }, (_, i) => `${y}-${pad(m)}-${pad(i + 1)}`),
+  ];
+  while (cells.length % 7) cells.push(null);
+  return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
+}

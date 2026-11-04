@@ -5,7 +5,7 @@ import { colors } from '@/theme';
 export type IconName =
   | 'back' | 'chevron-right' | 'chevron-left' | 'plus' | 'share' | 'qr' | 'check' | 'close'
   | 'home' | 'heart' | 'plane' | 'gift' | 'cart' | 'star' | 'bolt' | 'child' | 'party' | 'car'
-  | 'tag' | 'transfer' | 'income' | 'trash' | 'logout' | 'edit' | 'camera' | 'copy' | 'repeat' | 'chart' | 'pin' | 'more';
+  | 'tag' | 'transfer' | 'income' | 'trash' | 'logout' | 'edit' | 'camera' | 'copy' | 'repeat' | 'chart' | 'pin' | 'more' | 'calendar';
 
 const paths: Record<IconName, (c: string) => React.ReactNode> = {
   back: () => <Path d="M19 12H5M12 19l-7-7 7-7" />,
@@ -76,6 +76,11 @@ const paths: Record<IconName, (c: string) => React.ReactNode> = {
   repeat: () => <Path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4" />,
   chart: () => <Path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   pin: () => <Path d="M12 17v5M9 3h6l-1 6 3 4H7l3-4z" />,
+  calendar: () => (
+    <>
+      <Rect x={3} y={5} width={18} height={16} rx={2} /><Path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
   more: () => (
     <>
       <Circle cx={12} cy={5} r={1.3} /><Circle cx={12} cy={12} r={1.3} /><Circle cx={12} cy={19} r={1.3} />

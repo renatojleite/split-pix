@@ -1,14 +1,18 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 
+import { EmojiPicker } from '@/components/emoji-picker';
 import { MonthNav } from '@/components/group/month-nav';
 import { PercentEditor } from '@/components/percent-editor';
-import { Button, Card, ErrorText, Header, Loading, Screen } from '@/components/ui';
-import { useClearCategoryRule, useGroup, useSetSplitRule, type GroupDetail } from '@/lib/api';
+import { Button, Card, EmojiTile, ErrorText, Header, Input, Loading, Screen, SectionTitle } from '@/components/ui';
+import {
+  useCategoryUsage, useClearCategoryRule, useDeleteCategory, useGroup, useSetSplitRule, useUpdateCategory, type GroupDetail,
+} from '@/lib/api';
 import { monthLabel, monthStart, today } from '@/lib/dates';
 import { effectiveRule } from '@/lib/split';
-import { colors, type } from '@/theme';
+import type { Category } from '@/lib/types';
+import { colors, space, type } from '@/theme';
 
 export default function RegraScreen() {
   const { id, categoryId } = useLocalSearchParams<{ id: string; categoryId?: string }>();
@@ -50,7 +54,9 @@ function RuleForm({ detail, categoryId }: { detail: GroupDetail; categoryId: str
       <Button title="Salvar divisão" onPress={submit} disabled={!valid} loading={save.isPending} />
       {hasOwn ? <Button title="Usar o padrão do grupo" variant="ghost" onPress={useDefault} loading={clear.isPending} /> : null}
     </>}>
-      <Header title={category ? category.name : 'Padrão do grupo'} />
+      <Header title={category ? 'Categoria' : 'Padrão do grupo'} />
+      {category ? <CategoryEditor groupId={detail.group.id} category={category} /> : null}
+      {category ? <SectionTitle>Divisão desta categoria</SectionTitle> : null}
       <Text style={{ fontSize: 15, lineHeight: 22, color: colors.muted }}>
         {category
           ? `Lançamentos de ${category.name} usam este % em vez do padrão do grupo. Dá para ajustar item a item no lançamento.`
@@ -68,6 +74,59 @@ function RuleForm({ detail, categoryId }: { detail: GroupDetail; categoryId: str
         </Text>
       </View>
       <ErrorText>{save.error?.message ?? clear.error?.message}</ErrorText>
+      {category ? <DeleteCategory groupId={detail.group.id} category={category} /> : null}
     </Screen>
+  );
+}
+
+/** Nome e emoji, com salvar próprio (não mexe na divisão). */
+function CategoryEditor({ groupId, category }: { groupId: string; category: Category }) {
+  const update = useUpdateCategory(groupId);
+  const [name, setName] = useState(category.name);
+  const [emoji, setEmoji] = useState(category.emoji);
+  const [picking, setPicking] = useState(false);
+  const changed = (name.trim() && name.trim() !== category.name) || emoji !== category.emoji;
+
+  return (
+    <View style={{ gap: space.sm }}>
+      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <EmojiTile emoji={emoji} size={56} onPress={() => setPicking(true)} label="Emoji da categoria" />
+        <Input value={name} onChangeText={setName} maxLength={30} placeholder="Nome da categoria" style={{ flex: 1 }} />
+      </View>
+      {changed ? (
+        <Button title="Salvar nome e emoji" variant="secondary" loading={update.isPending}
+          onPress={() => update.mutate({ id: category.id, name, emoji })} />
+      ) : null}
+      {update.isSuccess && !changed ? <Text style={{ fontSize: 13, color: colors.positive }}>Salvo ✓</Text> : null}
+      <ErrorText>{update.error?.message}</ErrorText>
+      <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
+    </View>
+  );
+}
+
+function DeleteCategory({ groupId, category }: { groupId: string; category: Category }) {
+  const remove = useDeleteCategory(groupId);
+  const usage = useCategoryUsage(groupId, category.id);
+  const count = usage.data ?? 0;
+
+  function confirm() {
+    const impact = count === 0
+      ? 'Nenhum lançamento usa esta categoria.'
+      : `${count} ${count === 1 ? 'lançamento fica' : 'lançamentos ficam'} como "Sem categoria". Valores e divisões já feitos não mudam.`;
+    Alert.alert(`Excluir "${category.name}"?`, `${impact} A regra de % desta categoria também é removida. Não dá para desfazer.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Excluir', style: 'destructive', onPress: async () => { await remove.mutateAsync(category.id); router.back(); } },
+    ]);
+  }
+
+  return (
+    <View style={{ gap: space.sm, paddingTop: space.lg }}>
+      <Button title="Excluir categoria" variant="danger" icon="trash" onPress={confirm} loading={remove.isPending}
+        disabled={usage.isLoading} />
+      <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+        {usage.isLoading ? ' ' : count === 0 ? 'Sem lançamentos nesta categoria.' : `Usada em ${count} ${count === 1 ? 'lançamento' : 'lançamentos'}.`}
+      </Text>
+      <ErrorText>{remove.error?.message}</ErrorText>
+    </View>
   );
 }

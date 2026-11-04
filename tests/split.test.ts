@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { addMonths, monthStart, seriesDates } from '../src/lib/dates.ts';
+import { addMonths, monthGrid, monthStart, seriesDates } from '../src/lib/dates.ts';
 import { centsFromInput, formatBRL, formatPercent } from '../src/lib/money.ts';
 import { allocateCents, effectiveRule, previewSplit, settleUp } from '../src/lib/split.ts';
 import { summarize } from '../src/lib/summary.ts';
@@ -144,4 +144,14 @@ test('Pix: payload com valor, chave celular e nome sem acento', async () => {
   const accented = buildPixPayload({ keyType: 'email', key: 'Paula@Email.com', name: 'Paula Conceição', city: 'São Paulo' });
   assert.ok(accented.includes('paula@email.com') && accented.includes('PAULA CONCEICAO') && accented.includes('SAO PAULO'));
   assert.ok(!accented.includes('5406'), 'sem valor quando não informado');
+});
+
+test('calendário: grade do mês começa no dia da semana certo', () => {
+  const nov = monthGrid('2026-11-01'); // 1/nov/2026 é domingo
+  assert.equal(nov[0][0], '2026-11-01');
+  assert.equal(nov.flat().filter(Boolean).length, 30);
+  const fev = monthGrid('2028-02-01'); // 2028 é bissexto; 1/fev é terça
+  assert.deepEqual(fev[0].slice(0, 3), [null, null, '2028-02-01']);
+  assert.equal(fev.flat().filter(Boolean).at(-1), '2028-02-29');
+  assert.ok(nov.every((w) => w.length === 7));
 });

@@ -196,6 +196,48 @@ export function useAddCategory(groupId: string) {
   });
 }
 
+export function useUpdateCategory(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name, emoji }: { id: string; name: string; emoji: string }) =>
+      must(await supabase.from('categories').update({ name: name.trim(), emoji }).eq('id', id).select('id').single()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.group(groupId) }),
+  });
+}
+
+/** Excluir: lançamentos ficam "Sem categoria" e a regra de % da categoria some. */
+export function useDeleteCategory(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await supabase.from('categories').delete().eq('id', id).select('id');
+      const rows = must(res) as { id: string }[];
+      if (rows.length === 0) throw new Error('Não foi possível excluir a categoria.');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.group(groupId) });
+      qc.invalidateQueries({ queryKey: keys.groups });
+    },
+  });
+}
+
+/** Quantos lançamentos ativos usam a categoria (para o aviso antes de excluir). */
+export function useCategoryUsage(groupId: string, categoryId: string | null) {
+  return useQuery({
+    queryKey: [...keys.group(groupId), 'category-usage', categoryId],
+    enabled: !!categoryId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', categoryId!)
+        .is('deleted_at', null);
+      if (error) throw new Error(friendly(error.message));
+      return count ?? 0;
+    },
+  });
+}
+
 // ───────────── Divisão ─────────────
 
 export function useSetSplitRule(groupId: string) {
