@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Alert, RefreshControl, SectionList, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
 
 import { useDeleteEntry, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
@@ -8,6 +9,7 @@ import { formatBRL, formatPercent } from '@/lib/money';
 import type { Entry } from '@/lib/types';
 import { colors, defaultEmoji, space } from '@/theme';
 import { Card, EmojiTile, ErrorText, Loading } from '../ui';
+import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
 import { PeopleBlock } from './people-block';
 
@@ -21,12 +23,16 @@ export function ExpensesTab({ detail, month, onMonth }: {
   const category = (id: string | null) => detail.categories.find((c) => c.id === id);
 
   const list = entries.data ?? [];
+  // Dia escolhido no calendário; vale só enquanto o mês mostrado é o mesmo.
+  const [pickedDay, setPickedDay] = useState<string | null>(null);
+  const day = pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
+  const visible = day ? list.filter((e) => e.occurred_on === day) : list;
   const expenses = list.filter((e) => e.type === 'expense');
   const total = expenses.reduce((a, e) => a + e.amount_cents, 0);
   const mine = expenses.reduce((a, e) => a + (e.shares.find((s) => s.member_id === me?.id)?.share_cents ?? 0), 0);
 
   const sections = Object.values(
-    list.reduce<Record<string, { title: string; data: Entry[] }>>((acc, e) => {
+    visible.reduce<Record<string, { title: string; data: Entry[] }>>((acc, e) => {
       (acc[e.occurred_on] ??= { title: dayLabel(e.occurred_on), data: [] }).data.push(e);
       return acc;
     }, {}),
@@ -88,6 +94,17 @@ export function ExpensesTab({ detail, month, onMonth }: {
             <Stat label="Total do mês" value={formatBRL(total)} />
           </View>
           <PeopleBlock entries={list} members={detail.members} categories={detail.categories} meId={me?.id} />
+          <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} />
+          {day ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 14, backgroundColor: colors.primarySoft }}>
+              <Text style={{ flex: 1, fontSize: 14, color: colors.primaryInk }}>
+                Mostrando só <Text style={{ fontWeight: '700' }}>{dayLabel(day)}</Text> · {visible.length} {visible.length === 1 ? 'lançamento' : 'lançamentos'}
+              </Text>
+              <Pressable onPress={() => setPickedDay(null)} hitSlop={10} accessibilityRole="button">
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {list.length > 0 ? (
             <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para duplicar ou excluir</Text>
           ) : null}
@@ -98,7 +115,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
       ListEmptyComponent={
         entries.isLoading ? undefined : (
           <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 15, paddingVertical: 40 }}>
-            Nenhum lançamento neste mês.
+            {day ? 'Nenhum lançamento neste dia.' : 'Nenhum lançamento neste mês.'}
           </Text>
         )
       }

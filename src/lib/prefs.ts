@@ -36,5 +36,6 @@ export type PixProfile = { keyType: PixKeyType; key: string; name: string; city:
 
 export const PREF = {
   peoplePinned: 'splitpix.group.peoplePinned',
+  calendarOpen: 'splitpix.group.calendarOpen',
   pix: 'splitpix.pix.profile',
 } as const;
