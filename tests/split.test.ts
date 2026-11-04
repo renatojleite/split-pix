@@ -9,6 +9,7 @@ import { allocateCents, effectiveRule, previewSplit, settleUp } from '../src/lib
 import { shownPeople, summarize } from '../src/lib/summary.ts';
 import type { Category, Entry, Member, Rule } from '../src/lib/types.ts';
 
+const NO_PIX = { pix_key_type: null, pix_key: null, pix_name: null, pix_city: null };
 const R = 'renato';
 const P = 'paula';
 
@@ -87,7 +88,7 @@ test('série recorrente: mesmo dia, ajustando fim de mês (igual ao banco)', () 
 });
 
 test('resumo: totais, por pessoa e por categoria batem com o exemplo do PRD', () => {
-  const m = (id: string, i: number): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: i, left_at: null });
+  const m = (id: string, i: number): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: i, left_at: null, ...NO_PIX });
   const members = [m(R, 0), m(P, 1)];
   const cat = (id: string, name: string, emoji: string): Category => ({ id, group_id: 'g', name, emoji, sort: 0 });
   const categories = [cat('mor', 'Moradia', '🏠'), cat('mer', 'Mercado', '🛒'), cat('fil', 'Filhos', '🧒')];
@@ -157,7 +158,7 @@ test('calendário: grade do mês começa no dia da semana certo', () => {
 });
 
 test('quem saiu do grupo só aparece no resumo se teve movimento', () => {
-  const mk = (id: string, left: string | null): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: 0, left_at: left });
+  const mk = (id: string, left: string | null): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: 0, left_at: left, ...NO_PIX });
   const members = [mk(R, null), mk(P, null), mk('ana', '2026-11-04')];
   const quiet = summarize([], members, []);
   assert.deepEqual(shownPeople(quiet.people, members).map((p) => p.memberId), [R, P]);

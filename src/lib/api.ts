@@ -161,6 +161,22 @@ export function useRenameMember(groupId: string) {
   });
 }
 
+/** Chave Pix guardada no grupo. keyType null limpa. O banco só deixa alterar a própria ou a de quem não tem conta. */
+export function useSetMemberPix(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ memberId, profile }: { memberId: string; profile: { keyType: string; key: string; name: string; city: string } | null }) =>
+      must(await supabase.rpc('set_member_pix', {
+        p_member_id: memberId,
+        p_key_type: profile?.keyType ?? null,
+        p_key: profile?.key ?? null,
+        p_name: profile?.name ?? null,
+        p_city: profile?.city ?? null,
+      })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.group(groupId) }),
+  });
+}
+
 /** Remove (ou sai do grupo). O banco exige saldo zerado e redistribui o %. */
 export function useRemoveMember(groupId: string) {
   const qc = useQueryClient();

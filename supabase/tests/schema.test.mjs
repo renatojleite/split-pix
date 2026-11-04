@@ -220,6 +220,17 @@ ok(!!(await fails(A, `select remove_member($1)`, [R2])), 'criador não pode ser 
 ok(!!(await fails(D, `select remove_member($1)`, [P2])), 'quem é de fora não remove');
 ok(!!(await fails(A, `select remove_member($1)`, [A2])), 'não remove duas vezes');
 
+// Chave Pix no grupo
+await as(A, `select set_member_pix($1, 'phone', '+5511987654321', 'Renato Leite')`, [R2]);
+ok((await as(A, `select pix_key from group_members where id=$1`, [R2]))[0].pix_key === '+5511987654321', 'salva a própria chave Pix');
+ok((await as(A, `select set_member_pix($1, 'email', 'paula@x.com', 'Paula')`, [P2]).then(() => true)), 'cadastra chave de quem ainda não tem conta');
+ok(!!(await fails(A, `select set_member_pix($1, 'phone', '+5511900000000', 'x')`, [P])), 'não altera a chave de quem já usa o app');
+ok(!!(await fails(D, `select set_member_pix($1, 'phone', '+5511900000000', 'x')`, [P2])), 'quem é de fora não altera');
+ok((await as(D, `select count(*)::int n from group_members where group_id=$1`, [g2]))[0].n === 0, 'quem é de fora não vê as chaves');
+ok(!!(await fails(A, `update group_members set pix_key='+5511900000000' where id=$1`, [P])), 'não troca chave alheia direto na tabela');
+await as(A, `select set_member_pix($1, null, null, null)`, [R2]);
+ok((await as(A, `select pix_key is null k from group_members where id=$1`, [R2]))[0].k, 'limpar a chave');
+
 ok(!!(await (async () => { try { await db.exec(`reset role; set role anon;`); await db.query(`select preview_invite('AAAAAA')`); return null; } catch (e) { return e.message; } finally { await db.exec('reset role;'); } })()), 'sem login não chama funções');
 
 console.log(failures ? `\n${failures} falha(s)` : '\ntodos os testes passaram');

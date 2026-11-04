@@ -24,6 +24,11 @@ export type Member = {
   color: string;
   position: number;
   left_at: string | null; // saiu do grupo (histórico mantido)
+  // Chave Pix para receber (visível só aos membros; altera via set_member_pix)
+  pix_key_type: 'cpf' | 'phone' | 'email' | 'random' | null;
+  pix_key: string | null;
+  pix_name: string | null;
+  pix_city: string | null;
 };
 
 export type Category = { id: string; group_id: string; name: string; emoji: string; sort: number };
