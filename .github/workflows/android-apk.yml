@@ -10,6 +10,11 @@ on:
 permissions:
   contents: write
 
+# Um push novo cancela o build anterior em andamento (o novo já contém tudo).
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -44,9 +49,17 @@ jobs:
       - name: Gerar projeto Android
         run: npx expo prebuild --platform android --no-install
 
+      # Guarda ~/.gradle (dependências, wrapper e build cache) entre execuções.
+      - uses: gradle/actions/setup-gradle@v4
+
       - name: Compilar APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        # Só arm64-v8a: todo Android de 64 bits dos últimos ~8 anos (inclui o S23).
+        # Compila 1 arquitetura em vez de 4 e o APK fica bem menor.
+        run: >
+          ./gradlew assembleRelease
+          -PreactNativeArchitectures=arm64-v8a
+          --build-cache --parallel
 
       - name: Renomear
         # Nome fixo (split-pix.apk) para o link "última versão" usado no convite do app.
