@@ -7,12 +7,12 @@ import { Icon } from '@/components/icons';
 import {
   Button, Card, Chip, EmojiTile, ErrorText, Field, Header, IconButton, Input, Loading, Screen, Segmented, SplitBar,
 } from '@/components/ui';
-import { useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
+import { useAddCategory, useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { addDays, dayMonth, seriesDates, shortDate, today } from '@/lib/dates';
 import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/money';
 import { effectiveRule, previewSplit } from '@/lib/split';
-import type { Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
+import type { Category, Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
 import { colors, defaultEmoji, space, type } from '@/theme';
 
 type Params = {
@@ -199,6 +199,10 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         </Field>
         <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji do lançamento" />
 
+        {!isTransfer ? (
+          <CategoryPicker categories={detail.categories} value={categoryId} onChange={setCategoryId} groupId={id} />
+        ) : null}
+
         <Field label="Valor">
           <Input big value={amount ? `R$ ${inputFromCents(amount)}` : ''} placeholder="R$ 0,00"
             onChangeText={(t) => setAmount(centsFromInput(t))} keyboardType="number-pad" />
@@ -257,15 +261,6 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
 
         {!isTransfer ? (
           <>
-            <Field label="Categoria">
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {detail.categories.map((c) => (
-                  <Chip key={c.id} label={c.name} selected={categoryId === c.id}
-                    onPress={() => setCategoryId(categoryId === c.id ? null : c.id)} />
-                ))}
-              </View>
-            </Field>
-
             <View style={{ gap: space.md }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <Text style={type.label}>Divisão</Text>
@@ -342,5 +337,51 @@ function InlineNumber({ value, onChange, prefix, suffix, label }: {
         style={{ minWidth: 44, padding: 0, fontSize: 16, fontWeight: '700', color: colors.text, textAlign: 'right' }} />
       {suffix ? <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{suffix}</Text> : null}
     </View>
+  );
+}
+
+/** Categorias em chips (com emoji) + "Nova" que cria e já seleciona sem sair do formulário. */
+function CategoryPicker({ categories, value, onChange, groupId }: {
+  categories: Category[]; value: string | null; onChange: (id: string | null) => void; groupId: string;
+}) {
+  const add = useAddCategory(groupId);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [emoji, setEmoji] = useState('🏷️');
+  const [picking, setPicking] = useState(false);
+
+  async function create() {
+    const { id } = await add.mutateAsync({ name, emoji });
+    onChange(id);
+    setCreating(false);
+    setName('');
+    setEmoji('🏷️');
+  }
+
+  return (
+    <Field label="Categoria">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {categories.map((c) => (
+          <Chip key={c.id} label={`${c.emoji} ${c.name}`} selected={value === c.id}
+            onPress={() => onChange(value === c.id ? null : c.id)} />
+        ))}
+        {!creating ? <Chip label="＋ Nova" onPress={() => setCreating(true)} /> : null}
+      </View>
+      {creating ? (
+        <View style={{ gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <EmojiTile emoji={emoji} size={52} onPress={() => setPicking(true)} label="Emoji da categoria" />
+            <Input value={name} onChangeText={setName} placeholder="Nome da categoria" autoFocus maxLength={30}
+              style={{ flex: 1, height: 52 }} returnKeyType="done" onSubmitEditing={() => name.trim() && create()} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 44 }} onPress={() => setCreating(false)} />
+            <Button title="Criar" style={{ flex: 1, height: 44 }} disabled={!name.trim()} loading={add.isPending} onPress={create} />
+          </View>
+          <ErrorText>{add.error?.message}</ErrorText>
+          <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
+        </View>
+      ) : null}
+    </Field>
   );
 }

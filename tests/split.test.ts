@@ -121,3 +121,27 @@ test('resumo: totais, por pessoa e por categoria batem com o exemplo do PRD', ()
   assert.equal(settled.pending, 0);
   assert.equal(settled.spent, 335000);
 });
+
+test('Pix: CRC do exemplo do manual do BR Code (Banco Central)', async () => {
+  const { crc16 } = await import('../src/lib/pix.ts');
+  const body = '00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***6304';
+  assert.equal(crc16(body), '1D3D');
+});
+
+test('Pix: payload com valor, chave celular e nome sem acento', async () => {
+  const { buildPixPayload, crc16, normalizePixKey } = await import('../src/lib/pix.ts');
+  assert.equal(normalizePixKey('phone', '(11) 98765-4321'), '+5511987654321');
+  assert.equal(normalizePixKey('cpf', '123.456.789-09'), '12345678909');
+  assert.throws(() => normalizePixKey('cpf', '123'));
+  const p = buildPixPayload({ keyType: 'phone', key: '11987654321', name: 'Renato Leite', amountCents: 52500, txid: 'SPLITPIX-PX7K2M' });
+  assert.match(p, /^000201/);
+  assert.ok(p.includes('0014br.gov.bcb.pix0114+5511987654321'));
+  assert.ok(p.includes('5406525.00'));
+  assert.ok(p.includes('5912RENATO LEITE'));
+  assert.ok(p.includes('6006BRASIL'));
+  assert.ok(p.includes('62180514SPLITPIXPX7K2M'));
+  assert.equal(p.slice(-4), crc16(p.slice(0, -4)));
+  const accented = buildPixPayload({ keyType: 'email', key: 'Paula@Email.com', name: 'Paula Conceição', city: 'São Paulo' });
+  assert.ok(accented.includes('paula@email.com') && accented.includes('PAULA CONCEICAO') && accented.includes('SAO PAULO'));
+  assert.ok(!accented.includes('5406'), 'sem valor quando não informado');
+});

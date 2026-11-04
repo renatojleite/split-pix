@@ -9,6 +9,7 @@ import type { Entry } from '@/lib/types';
 import { colors, defaultEmoji, space } from '@/theme';
 import { Card, EmojiTile, ErrorText, Loading } from '../ui';
 import { MonthNav } from './month-nav';
+import { PeopleBlock } from './people-block';
 
 export function ExpensesTab({ detail, month, onMonth }: {
   detail: GroupDetail; month: string; onMonth: (m: string) => void;
@@ -86,6 +87,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
             <Stat label="Minha parte" value={formatBRL(mine)} />
             <Stat label="Total do mês" value={formatBRL(total)} />
           </View>
+          <PeopleBlock entries={list} members={detail.members} categories={detail.categories} meId={me?.id} />
           {list.length > 0 ? (
             <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para duplicar ou excluir</Text>
           ) : null}

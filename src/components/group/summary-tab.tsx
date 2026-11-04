@@ -13,7 +13,7 @@ export function SummaryTab({ detail, month, onMonth }: {
   detail: GroupDetail; month: string; onMonth: (m: string) => void;
 }) {
   const userId = useUserId();
-  const [scope, setScope] = useState<'month' | 'all'>('month');
+  const [scope, setScope] = useState<'month' | 'all'>('all');
   const monthly = useEntries(detail.group.id, month);
   const all = useAllEntries(detail.group.id, scope === 'all');
   const source = scope === 'month' ? monthly : all;
@@ -36,8 +36,8 @@ export function SummaryTab({ detail, month, onMonth }: {
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 48, gap: space.md, paddingTop: space.sm }}>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Chip label="Por mês" selected={scope === 'month'} onPress={() => setScope('month')} />
         <Chip label="Acumulado" selected={scope === 'all'} onPress={() => setScope('all')} />
+        <Chip label="Por mês" selected={scope === 'month'} onPress={() => setScope('month')} />
       </View>
       {scope === 'month' ? <MonthNav month={month} onMonth={onMonth} /> : null}
 

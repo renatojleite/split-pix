@@ -26,6 +26,7 @@ function must<T>(res: { data: T | null; error: { message: string } | null }): T 
 /** Mensagens das RAISE EXCEPTION do banco já vêm em português; o resto vira genérico. */
 function friendly(message: string) {
   if (/fetch|network/i.test(message)) return 'Sem conexão. Tente de novo.';
+  if (/categories_group_id_name_key/.test(message)) return 'Já existe uma categoria com esse nome.';
   return message;
 }
 
