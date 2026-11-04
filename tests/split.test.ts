@@ -215,4 +215,9 @@ test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por
 
   const settled = buildReport({ ...base, kind: 'summary', entries: [entries[1], e('4', '2026-11-04', 'Acerto', 32000, P, [], 'transfer', R)] });
   assert.ok(settled.includes('✅ Ninguém deve nada no período.'));
+
+  // Credor sem chave: Pendente mostra só a dívida, sem aviso de cadastro
+  const noKey = buildReport({ ...base, kind: 'summary', members: [{ ...renato, ...NO_PIX }, paula] });
+  assert.ok(!noKey.includes('ainda não cadastrou') && !noKey.includes('Pix copia e cola'));
+  assert.ok(noKey.includes('• *Renato*: (ausente)'));
 });

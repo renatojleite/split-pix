@@ -123,8 +123,8 @@ export function buildReport(input: ReportInput): string {
     add(`• ${name(t.from)} deve *${formatBRL(t.cents)}* a ${name(t.to)}`);
     const to = members.find((m) => m.id === t.to);
     const code = to ? pixFor(to, t.cents, group) : null;
+    // Sem chave, só a dívida: o "(ausente)" já aparece em Chaves Pix.
     if (code) add(`   Pix copia e cola (${formatBRL(t.cents)} para ${name(t.to)}):`, code);
-    else add(`   ${name(t.to)} ainda não cadastrou a chave Pix no app.`);
   }
 
   // Chaves Pix de quem está no grupo
