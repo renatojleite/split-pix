@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { addMonths, monthGrid, monthStart, seriesDates } from '../src/lib/dates.ts';
 import { centsFromInput, formatBRL, formatPercent } from '../src/lib/money.ts';
 import { allocateCents, effectiveRule, previewSplit, settleUp } from '../src/lib/split.ts';
-import { summarize } from '../src/lib/summary.ts';
+import { shownPeople, summarize } from '../src/lib/summary.ts';
 import type { Category, Entry, Member, Rule } from '../src/lib/types.ts';
 
 const R = 'renato';
@@ -87,7 +87,7 @@ test('série recorrente: mesmo dia, ajustando fim de mês (igual ao banco)', () 
 });
 
 test('resumo: totais, por pessoa e por categoria batem com o exemplo do PRD', () => {
-  const m = (id: string, i: number): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: i });
+  const m = (id: string, i: number): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: i, left_at: null });
   const members = [m(R, 0), m(P, 1)];
   const cat = (id: string, name: string, emoji: string): Category => ({ id, group_id: 'g', name, emoji, sort: 0 });
   const categories = [cat('mor', 'Moradia', '🏠'), cat('mer', 'Mercado', '🛒'), cat('fil', 'Filhos', '🧒')];
@@ -154,4 +154,15 @@ test('calendário: grade do mês começa no dia da semana certo', () => {
   assert.deepEqual(fev[0].slice(0, 3), [null, null, '2028-02-01']);
   assert.equal(fev.flat().filter(Boolean).at(-1), '2028-02-29');
   assert.ok(nov.every((w) => w.length === 7));
+});
+
+test('quem saiu do grupo só aparece no resumo se teve movimento', () => {
+  const mk = (id: string, left: string | null): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: 0, left_at: left });
+  const members = [mk(R, null), mk(P, null), mk('ana', '2026-11-04')];
+  const quiet = summarize([], members, []);
+  assert.deepEqual(shownPeople(quiet.people, members).map((p) => p.memberId), [R, P]);
+  const e: Entry = { id: 'x', group_id: 'g', type: 'expense', title: 't', amount_cents: 300, paid_by: 'ana', transfer_to: null,
+    category_id: null, emoji: null, occurred_on: '2026-10-01', split_mode: 'equal', recurrence_id: null, recurrence_index: null,
+    recurrence_total: null, updated_by: null, updated_at: '', shares: [R, P, 'ana'].map((m) => ({ member_id: m, share_cents: 100, basis_points: null })) };
+  assert.ok(shownPeople(summarize([e], members, []).people, members).some((p) => p.memberId === 'ana'));
 });

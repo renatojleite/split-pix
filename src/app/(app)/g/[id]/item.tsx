@@ -34,7 +34,7 @@ export default function ItemScreen() {
 /** Edição/duplicação carregam o lançamento; novo usa padrões (ou o acerto sugerido pela aba Saldos). */
 function initialState(detail: GroupDetail, entry: Entry | null, params: Params, meId: string | undefined) {
   const members = detail.members;
-  const all = new Set(members.map((m) => m.id));
+  const all = new Set(members.map((m) => m.id)); // só ativos entram por padrão
   if (entry) {
     const duplicating = !!params.duplicateOf;
     return {
@@ -42,7 +42,10 @@ function initialState(detail: GroupDetail, entry: Entry | null, params: Params, 
       emoji: entry.emoji,
       transferTo: entry.transfer_to ?? '', date: duplicating ? today() : entry.occurred_on, categoryId: entry.category_id,
       mode: entry.split_mode,
-      participants: entry.shares.length ? new Set(entry.shares.map((s) => s.member_id)) : all,
+      // Duplicando: só quem ainda está no grupo.
+      participants: entry.shares.length
+        ? new Set(entry.shares.map((s) => s.member_id).filter((id) => !duplicating || all.has(id)))
+        : all,
       percent: Object.fromEntries(entry.shares.map((s) => [s.member_id, s.basis_points ?? 0])) as Record<string, number>,
       exact: Object.fromEntries(entry.shares.map((s) => [s.member_id, s.share_cents])) as Record<string, number>,
     };
@@ -69,7 +72,9 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
   const userId = useUserId();
   const save = useSaveEntry(id);
   const remove = useDeleteEntry(id);
-  const members = detail.members;
+  // Ativos + quem saiu mas aparece neste lançamento (edição de histórico).
+  const involved = new Set([entry?.paid_by, entry?.transfer_to, ...(entry?.shares ?? []).map((x) => x.member_id)]);
+  const members = detail.allMembers.filter((m) => !m.left_at || involved.has(m.id));
   const me = members.find((m) => m.user_id === userId);
   const [init] = useState(() => initialState(detail, entry, params, me?.id));
 
@@ -134,7 +139,8 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
       categoryId: isTransfer ? null : categoryId,
       occurredOn: date,
       splitMode: isTransfer ? 'default' : mode,
-      participants: mode === 'default' || mode === 'equal' ? (allSelected ? null : [...participants]) : null,
+      // 'Igual' manda a lista sempre: o banco não sabe quem saiu do grupo nesse modo.
+      participants: mode === 'equal' ? [...participants] : mode === 'default' ? (allSelected ? null : [...participants]) : null,
       custom: mode === 'percent' ? percent : mode === 'exact' ? exact : null,
       emoji,
       repeatCount: repeating ? repeatCount : 1,

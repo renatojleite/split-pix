@@ -4,7 +4,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { formatBRL } from '@/lib/money';
-import { summarize } from '@/lib/summary';
+import { shownPeople, summarize } from '@/lib/summary';
 import { colors, space } from '@/theme';
 import { Avatar, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle, SplitBar } from '../ui';
 import { MonthNav } from './month-nav';
@@ -17,7 +17,8 @@ export function SummaryTab({ detail, month, onMonth }: {
   const monthly = useEntries(detail.group.id, month);
   const all = useAllEntries(detail.group.id, scope === 'all');
   const source = scope === 'month' ? monthly : all;
-  const { members, categories } = detail;
+  const { categories } = detail;
+  const members = detail.allMembers;
   const name = (id: string) => {
     const m = members.find((x) => x.id === id);
     return m?.user_id === userId ? 'Você' : m?.display_name ?? '—';
@@ -63,7 +64,7 @@ export function SummaryTab({ detail, month, onMonth }: {
       ) : null}
 
       <SectionTitle>Por pessoa</SectionTitle>
-      {s.people.map((p) => {
+      {shownPeople(s.people, members).map((p) => {
         const m = members.find((x) => x.id === p.memberId)!;
         return (
           <Card key={p.memberId} style={{ gap: 10 }}>

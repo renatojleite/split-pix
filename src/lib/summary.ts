@@ -33,6 +33,14 @@ export type Summary = {
   categories: CategorySummary[];
 };
 
+/** Mostra quem está no grupo e quem saiu mas tem movimento no período (histórico). */
+export function shownPeople(people: PersonSummary[], members: Member[]): PersonSummary[] {
+  return people.filter((p) => {
+    const m = members.find((x) => x.id === p.memberId);
+    return (m && !m.left_at) || p.paid || p.share || p.received || p.incomeShare || p.sent || p.got;
+  });
+}
+
 export function summarize(entries: Entry[], members: Member[], categories: Category[]): Summary {
   const people = new Map<string, PersonSummary>(
     members.map((m) => [m.id, { memberId: m.id, paid: 0, share: 0, received: 0, incomeShare: 0, sent: 0, got: 0, balance: 0 }]),

@@ -19,7 +19,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
   const userId = useUserId();
   const entries = useEntries(detail.group.id, month);
   const me = detail.members.find((m) => m.user_id === userId);
-  const name = (id: string | null) => detail.members.find((m) => m.id === id)?.display_name ?? '—';
+  const name = (id: string | null) => detail.allMembers.find((m) => m.id === id)?.display_name ?? '—';
   const category = (id: string | null) => detail.categories.find((c) => c.id === id);
 
   const list = entries.data ?? [];
@@ -41,7 +41,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
   function ruleLabel(e: Entry) {
     if (e.split_mode === 'equal') return 'igualmente';
     if (e.split_mode === 'exact') return 'valores exatos';
-    const pct = detail.members
+    const pct = detail.allMembers
       .map((m) => e.shares.find((s) => s.member_id === m.id)?.basis_points ?? 0)
       .filter((bp) => bp > 0)
       .map(formatPercent)
@@ -93,7 +93,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
             <Stat label="Minha parte" value={formatBRL(mine)} />
             <Stat label="Total do mês" value={formatBRL(total)} />
           </View>
-          <PeopleBlock entries={list} members={detail.members} categories={detail.categories} meId={me?.id} />
+          <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
           <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} />
           {day ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 14, backgroundColor: colors.primarySoft }}>

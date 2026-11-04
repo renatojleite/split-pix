@@ -201,6 +201,25 @@ ok((await as(A, `select count(*)::int n from split_rules where category_id=$1`, 
 const [{ b: after }] = await as(A, `select sum(balance_cents)::bigint b from member_balances where group_id=$1 and member_id=$2`, [g, R]);
 ok(Number(before) === Number(after), 'saldos não mudam ao excluir categoria');
 
+// Remover participante
+const [{ g2 }] = await as(A, `select create_group('Viagem', '✈️', 'Renato', array['Paula', 'Ana'], array[5000, 3000, 2000]) g2`);
+const m2 = await as(A, `select id, display_name from group_members where group_id=$1 order by position`, [g2]);
+const [R2, P2, A2] = m2.map((x) => x.id);
+await as(A, `select remove_member($1)`, [A2]);
+const shares2 = await as(A, `select m.display_name n, s.basis_points bp from split_rule_shares s join group_members m on m.id=s.member_id join split_rules r on r.id=s.rule_id where r.group_id=$1 and r.category_id is null order by m.position`, [g2]);
+ok(shares2.map((x) => x.bp).join('/') === '6250/3750/0', `% redistribuído proporcionalmente (${shares2.map((x) => x.bp).join('/')})`);
+ok((await as(A, `select left_at is not null l from group_members where id=$1`, [A2]))[0].l, 'participante marcado como removido');
+const [{ code2 }] = await as(A, `select invite_code code2 from groups where id=$1`, [g2]);
+const [{ p: prev2 }] = await as(D, `select preview_invite($1) p`, [code2]);
+ok(prev2.unclaimed.length === 1 && prev2.unclaimed[0].id === P2, 'removido não aparece para assumir no convite');
+await as(A, `select save_entry(p_group_id=>$1, p_type=>'expense', p_title=>'Hotel', p_amount_cents=>10000, p_paid_by=>$2, p_occurred_on=>'2026-11-04')`, [g2, R2]);
+const hotel = await as(A, `select m.display_name n, s.share_cents c from entries e join entry_shares s on s.entry_id=e.id join group_members m on m.id=s.member_id where e.group_id=$1 order by m.position`, [g2]);
+ok(hotel.length === 2 && Number(hotel[0].c) === 6250, 'nova despesa divide só entre quem ficou');
+ok(!!(await fails(A, `select remove_member($1)`, [P2])), 'com saldo pendente não remove');
+ok(!!(await fails(A, `select remove_member($1)`, [R2])), 'criador não pode ser removido');
+ok(!!(await fails(D, `select remove_member($1)`, [P2])), 'quem é de fora não remove');
+ok(!!(await fails(A, `select remove_member($1)`, [A2])), 'não remove duas vezes');
+
 ok(!!(await (async () => { try { await db.exec(`reset role; set role anon;`); await db.query(`select preview_invite('AAAAAA')`); return null; } catch (e) { return e.message; } finally { await db.exec('reset role;'); } })()), 'sem login não chama funções');
 
 console.log(failures ? `\n${failures} falha(s)` : '\ntodos os testes passaram');

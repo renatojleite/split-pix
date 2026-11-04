@@ -23,6 +23,7 @@ export type Member = {
   role: 'owner' | 'member';
   color: string;
   position: number;
+  left_at: string | null; // saiu do grupo (histórico mantido)
 };
 
 export type Category = { id: string; group_id: string; name: string; emoji: string; sort: number };

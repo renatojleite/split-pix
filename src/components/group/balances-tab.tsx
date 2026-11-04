@@ -6,7 +6,7 @@ import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayMonth } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
-import { summarize } from '@/lib/summary';
+import { shownPeople, summarize } from '@/lib/summary';
 import { colors, space } from '@/theme';
 import { Avatar, Button, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle } from '../ui';
 import { MonthNav } from './month-nav';
@@ -19,7 +19,7 @@ export function BalancesTab({ detail, month, onMonth }: {
   const monthly = useEntries(detail.group.id, month);
   const all = useAllEntries(detail.group.id, scope === 'all');
   const source = scope === 'month' ? monthly : all;
-  const { members } = detail;
+  const members = detail.allMembers;
   const me = members.find((m) => m.user_id === userId);
   const name = (id: string | null) => (id === me?.id ? 'Você' : members.find((m) => m.id === id)?.display_name ?? '—');
 
@@ -78,7 +78,7 @@ export function BalancesTab({ detail, month, onMonth }: {
       })}
 
       <SectionTitle>Por pessoa</SectionTitle>
-      {s.people.map((p) => {
+      {shownPeople(s.people, members).map((p) => {
         const m = members.find((x) => x.id === p.memberId)!;
         return (
           <Card key={m.id} style={{ gap: 10 }}>

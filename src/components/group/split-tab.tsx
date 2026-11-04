@@ -92,18 +92,29 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
       )}
 
       <SectionTitle>Participantes</SectionTitle>
+      <Text style={{ fontSize: 13, color: colors.muted, marginTop: -4 }}>
+        Toque numa pessoa para mudar o nome ou remover.
+      </Text>
       <Card style={{ padding: 0 }}>
         {members.map((m, i) => (
-          <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: space.lg, height: 60,
-            borderBottomWidth: i === members.length - 1 ? 0 : 1, borderColor: colors.divider }}>
+          <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Editar ${m.display_name}`}
+            onPress={() => router.push({ pathname: '/g/[id]/participante', params: { id: group.id, memberId: m.id } })}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: space.lg, height: 60,
+              borderBottomWidth: i === members.length - 1 ? 0 : 1, borderColor: colors.divider, opacity: pressed ? 0.6 : 1 })}>
             <Avatar name={m.display_name} color={m.color} size={36} />
             <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{m.display_name}</Text>
             <Text style={{ fontSize: 13, color: colors.muted }}>
               {m.user_id === userId ? 'você' : m.user_id ? (m.role === 'owner' ? 'criou o grupo' : 'no app') : 'ainda sem conta'}
             </Text>
-          </View>
+            <Icon name="chevron-right" size={18} color={colors.muted} />
+          </Pressable>
         ))}
       </Card>
+      {detail.allMembers.some((m) => m.left_at) ? (
+        <Text style={{ fontSize: 13, color: colors.muted }}>
+          Saíram do grupo: {detail.allMembers.filter((m) => m.left_at).map((m) => m.display_name).join(', ')} (continuam no histórico).
+        </Text>
+      ) : null}
       {newMember === null ? (
         <Pressable onPress={() => setNewMember('')} hitSlop={8}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>+ Adicionar participante</Text>

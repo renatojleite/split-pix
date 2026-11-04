@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { formatBRL } from '@/lib/money';
 import { PREF, usePref } from '@/lib/prefs';
-import { summarize } from '@/lib/summary';
+import { shownPeople, summarize } from '@/lib/summary';
 import type { Category, Entry, Member } from '@/lib/types';
 import { colors, space } from '@/theme';
 import { Icon } from '../icons';
@@ -50,7 +50,7 @@ export function PeopleBlock({ entries, members, categories, meId }: {
             <Text style={{ width: 92, textAlign: 'right', fontSize: 12, color: colors.muted }}>Gastou</Text>
             <Text style={{ width: 96, textAlign: 'right', fontSize: 12, color: colors.muted }}>Saldo</Text>
           </View>
-          {s.people.map((p) => {
+          {shownPeople(s.people, members).map((p) => {
             const m = members.find((x) => x.id === p.memberId)!;
             return (
               <View key={p.memberId} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: space.lg, paddingVertical: 10 }}>

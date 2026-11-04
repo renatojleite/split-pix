@@ -69,13 +69,15 @@ export function useGroups(userId: string) {
         const myBalance = me
           ? balances.filter((b) => b.member_id === me.id).reduce((a, b) => a + Number(b.balance_cents), 0)
           : 0;
-        return { ...g, members: g.members.sort((a, b) => a.position - b.position), me, myBalance };
+        const active = g.members.filter((m) => !m.left_at).sort((a, b) => a.position - b.position);
+        return { ...g, members: active, me, myBalance };
       });
     },
   });
 }
 
-export type GroupDetail = { group: Group; members: Member[]; categories: Category[]; rules: Rule[] };
+/** members = ativos (divisão, escolhas); allMembers inclui quem saiu (nomes no histórico). */
+export type GroupDetail = { group: Group; members: Member[]; allMembers: Member[]; categories: Category[]; rules: Rule[] };
 
 export function useGroup(groupId: string) {
   return useQuery({
@@ -87,9 +89,11 @@ export function useGroup(groupId: string) {
         supabase.from('categories').select('*').eq('group_id', groupId).order('sort'),
         supabase.from('split_rules').select('id, group_id, category_id, effective_from, shares:split_rule_shares(member_id, basis_points)').eq('group_id', groupId),
       ]);
+      const all = must(members) as Member[];
       return {
         group: must(group) as Group,
-        members: must(members) as Member[],
+        members: all.filter((m) => !m.left_at),
+        allMembers: all,
         categories: must(categories) as Category[],
         rules: must(rules) as Rule[],
       };
@@ -142,6 +146,30 @@ export function useDuplicateGroup(groupId: string) {
         }),
       ) as string,
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.groups }),
+  });
+}
+
+export function useRenameMember(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ memberId, name }: { memberId: string; name: string }) =>
+      must(await supabase.from('group_members').update({ display_name: name.trim() }).eq('id', memberId).select('id').single()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.group(groupId) });
+      qc.invalidateQueries({ queryKey: keys.groups });
+    },
+  });
+}
+
+/** Remove (ou sai do grupo). O banco exige saldo zerado e redistribui o %. */
+export function useRemoveMember(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (memberId: string) => must(await supabase.rpc('remove_member', { p_member_id: memberId })),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.group(groupId) });
+      qc.invalidateQueries({ queryKey: keys.groups });
+    },
   });
 }
 
