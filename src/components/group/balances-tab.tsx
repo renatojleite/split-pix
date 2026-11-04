@@ -61,7 +61,13 @@ export function BalancesTab({ detail, month, onMonth }: {
             {iReceive ? (
               <>
                 <Button title="Receber via Pix" variant="positive"
-                  onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, ...params } })} />
+                  onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode: 'receive', ...params } })} />
+                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 44 }} />
+              </>
+            ) : iPay ? (
+              <>
+                <Button title="Pagar via Pix" variant="negative"
+                  onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode: 'pay', ...params } })} />
                 <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 44 }} />
               </>
             ) : (

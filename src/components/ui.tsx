@@ -58,7 +58,7 @@ export function IconButton({ name, label, onPress, color = colors.text }: {
 
 // ───────────── Ações ─────────────
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'positive' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'positive' | 'negative' | 'ghost';
 
 export function Button({ title, onPress, variant = 'primary', disabled, loading, icon, style }: {
   title: string; onPress: () => void; variant?: ButtonVariant; disabled?: boolean; loading?: boolean;
@@ -86,6 +86,7 @@ const buttonColors: Record<ButtonVariant, { bg: string; fg: string }> = {
   secondary: { bg: colors.card, fg: colors.text },
   danger: { bg: colors.negativeSoft, fg: colors.negative },
   positive: { bg: colors.positive, fg: '#FFFFFF' },
+  negative: { bg: colors.negative, fg: '#FFFFFF' },
   ghost: { bg: 'transparent', fg: colors.primary },
 };
 

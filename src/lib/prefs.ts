@@ -38,4 +38,6 @@ export const PREF = {
   peoplePinned: 'splitpix.group.peoplePinned',
   calendarOpen: 'splitpix.group.calendarOpen',
   pix: 'splitpix.pix.profile',
+  /** Chaves Pix de outros membros (para pagar), por id do membro. */
+  pixOthers: 'splitpix.pix.others',
 } as const;

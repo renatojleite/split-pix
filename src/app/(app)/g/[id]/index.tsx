@@ -76,7 +76,7 @@ export default function GroupScreen() {
       ) : null}
 
       <ActionSheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={`${g.emoji} ${g.name}`} actions={[
-        { emoji: '💸', label: 'Criar pagamento Pix', hint: 'QR ou código para alguém te pagar, com qualquer valor',
+        { emoji: '💸', label: 'Criar pagamento Pix', hint: 'Cobrar ou pagar com QR/código, qualquer valor',
           onPress: () => router.push({ pathname: '/g/[id]/pix', params: { id } }) },
         { emoji: '📋', label: 'Duplicar grupo', hint: 'Mesmas pessoas, categorias e divisão',
           onPress: () => router.push({ pathname: '/g/[id]/duplicar', params: { id } }) },
