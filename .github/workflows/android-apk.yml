@@ -1,11 +1,20 @@
-# Compila o APK de teste a cada push na main e publica numa Release do GitHub,
-# de onde dá para baixar e instalar direto no celular.
+# A cada push na main:
+#  - se só mudou JavaScript/telas  → publica uma atualização (EAS Update) que o app
+#    instalado baixa sozinho, em ~2 min, sem reinstalar;
+#  - se mudou algo nativo (biblioteca nativa, permissão, ícone, versão do Expo)
+#    → compila um APK novo e publica numa Release do GitHub.
+# A decisão compara a "impressão digital" nativa (@expo/fingerprint) com a do último APK.
 name: APK Android
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_apk:
+        description: Compilar APK mesmo sem mudança nativa
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -15,36 +24,84 @@ concurrency:
   group: apk-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Chaves públicas do Supabase (protegidas por RLS); as mesmas do eas.json.
+  EXPO_PUBLIC_SUPABASE_URL: https://giqbswgjkcblcsjdtmaz.supabase.co
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_GfXq_2NLydTFEIkzd5K3iA_YexBvmPu
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
 jobs:
-  apk:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      # Chaves públicas do Supabase (protegidas por RLS); as mesmas do eas.json.
-      EXPO_PUBLIC_SUPABASE_URL: https://giqbswgjkcblcsjdtmaz.supabase.co
-      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_GfXq_2NLydTFEIkzd5K3iA_YexBvmPu
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+    outputs:
+      native: ${{ steps.decide.outputs.native }}
+      fingerprint: ${{ steps.decide.outputs.fingerprint }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Instalar dependências
-        run: npm ci
+      - run: npm ci
 
       - name: Testes
         run: |
           npm run typecheck
           npm test
           npm run test:sql
+
+      - name: APK novo ou atualização?
+        id: decide
+        run: |
+          current=$(npx @expo/fingerprint fingerprint:generate --platform android | node -e "let b='';process.stdin.on('data',d=>b+=d);process.stdin.on('end',()=>console.log(JSON.parse(b).hash))")
+          previous=$(curl -fsSL "https://github.com/${{ github.repository }}/releases/latest/download/fingerprint.txt" 2>/dev/null || echo none)
+          echo "fingerprint=$current" >> "$GITHUB_OUTPUT"
+          if [ "${{ inputs.force_apk }}" = "true" ] || [ -z "$EXPO_TOKEN" ] || [ "$current" != "$previous" ]; then
+            echo "native=true" >> "$GITHUB_OUTPUT"
+            echo "Mudança nativa (ou sem EXPO_TOKEN): compila APK. atual=$current anterior=$previous"
+          else
+            echo "native=false" >> "$GITHUB_OUTPUT"
+            echo "Só JavaScript: publica atualização. fingerprint=$current"
+          fi
+
+  update:
+    needs: check
+    if: needs.check.outputs.native == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Publicar atualização (EAS Update)
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'atualização manual' }}
+        run: >
+          npx eas-cli@latest update
+          --channel preview --environment preview --platform android
+          --message "$(echo "$COMMIT_MESSAGE" | head -1)"
+          --non-interactive
+
+  apk:
+    needs: check
+    if: needs.check.outputs.native == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
 
       - name: Gerar projeto Android
         run: npx expo prebuild --platform android --no-install
@@ -55,15 +112,16 @@ jobs:
       - name: Compilar APK
         working-directory: android
         # Só arm64-v8a: todo Android de 64 bits dos últimos ~8 anos (inclui o S23).
-        # Compila 1 arquitetura em vez de 4 e o APK fica bem menor.
         run: >
           ./gradlew assembleRelease
           -PreactNativeArchitectures=arm64-v8a
           --build-cache --parallel
 
-      - name: Renomear
-        # Nome fixo (split-pix.apk) para o link "última versão" usado no convite do app.
-        run: cp android/app/build/outputs/apk/release/app-release.apk split-pix.apk
+      - name: Preparar arquivos
+        run: |
+          # Nome fixo para o link "última versão" usado no convite do app.
+          cp android/app/build/outputs/apk/release/app-release.apk split-pix.apk
+          echo "${{ needs.check.outputs.fingerprint }}" > fingerprint.txt
 
       - uses: actions/upload-artifact@v4
         with:
@@ -76,7 +134,9 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: split-pix teste ${{ github.run_number }}
           body: APK de teste. Baixe no Android e permita "instalar apps desta fonte".
-          files: split-pix.apk
-          # Marcada como "latest" para releases/latest/download/split-pix.apk sempre apontar para esta.
+          files: |
+            split-pix.apk
+            fingerprint.txt
+          # "latest" para releases/latest/download/split-pix.apk apontar sempre para esta.
           prerelease: false
           make_latest: true

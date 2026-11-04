@@ -4,6 +4,7 @@ import { ActionSheetIOS, Alert, Platform, Pressable, RefreshControl, ScrollView,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon, Logo } from '@/components/icons';
+import { UpdateBanner } from '@/components/update-banner';
 import { Button, Card, EmojiTile, ErrorText, Input, Loading } from '@/components/ui';
 import { useGroups, useProfile, useUpdateProfileName } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
@@ -36,6 +37,7 @@ export default function Home() {
           </Pressable>
         </View>
 
+        <UpdateBanner />
         {profile.data && !profile.data.name ? <AskName userId={userId} /> : null}
 
         {showArchived ? <Text style={type.title}>Grupos arquivados</Text> : null}
