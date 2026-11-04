@@ -167,3 +167,52 @@ test('quem saiu do grupo só aparece no resumo se teve movimento', () => {
     recurrence_total: null, updated_by: null, updated_at: '', shares: [R, P, 'ana'].map((m) => ({ member_id: m, share_cents: 100, basis_points: null })) };
   assert.ok(shownPeople(summarize([e], members, []).people, members).some((p) => p.memberId === 'ana'));
 });
+
+test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por pessoa', async () => {
+  const { buildReport, ruleLabel } = await import('../src/lib/report.ts');
+  const renato: Member = { id: R, group_id: 'g', user_id: 'u1', display_name: 'Renato', role: 'owner', color: '#000', position: 0, left_at: null,
+    pix_key_type: 'phone', pix_key: '+5511987654321', pix_name: 'Renato Leite', pix_city: null };
+  const paula: Member = { id: P, group_id: 'g', user_id: null, display_name: 'Paula', role: 'member', color: '#111', position: 1, left_at: null, ...NO_PIX };
+  const categories: Category[] = [{ id: 'mer', group_id: 'g', name: 'Mercado', emoji: '🛒', sort: 0 }];
+  const e = (id: string, day: string, title: string, amount: number, paid: string, shares: [string, number][], type: Entry['type'] = 'expense', to: string | null = null): Entry => ({
+    id, group_id: 'g', type, title, amount_cents: amount, paid_by: paid, transfer_to: to, category_id: type === 'expense' ? 'mer' : null,
+    emoji: null, occurred_on: day, split_mode: 'default', recurrence_id: null, recurrence_index: null, recurrence_total: null,
+    updated_by: null, updated_at: '', shares: shares.map(([member_id, share_cents]) => ({ member_id, share_cents, basis_points: null })),
+  });
+  const entries = [
+    e('2', '2026-11-03', 'Feira', 10000, R, [[R, 6000], [P, 4000]]),
+    e('1', '2026-10-28', 'Mercado do mês', 80000, R, [[R, 48000], [P, 32000]]),
+    e('3', '2026-11-04', 'Acerto via Pix', 6000, P, [], 'transfer', R),
+  ];
+  const base = { group: { name: 'Casa', emoji: '🏠', invite_code: 'PX7K2M' }, members: [renato, paula], categories, entries,
+    month: null, appUrl: 'https://exemplo/app.apk', generatedOn: '2026-11-04' };
+
+  const sum = buildReport({ ...base, kind: 'summary' });
+  const lines = sum.split('\n');
+  assert.deepEqual(lines.slice(0, 4), ['💸 *split-pix*', '━━━━━━━━━━━━━━', '🏠 *Casa* — relatório resumido',
+    '📅 Período: 28/10/2026 a 04/11/2026 (acumulado)']);
+  assert.ok(sum.includes('• Gasto total: *R$ 900,00*'));
+  assert.ok(sum.includes('• Paula deve *R$ 300,00* a Renato'));
+  const pix = lines[lines.findIndex((l) => l.includes('Pix copia e cola')) + 1];
+  assert.match(pix, /^000201.*5406300\.00/);
+  assert.ok(sum.includes('🛒 Mercado — R$ 900,00 (100%)'));
+  assert.ok(sum.includes('• *Paula*: (ausente)') && sum.includes('   +5511987654321'));
+  assert.ok(!sum.includes('Extrato'));
+  assert.ok(sum.includes('📲 Baixe o app: https://exemplo/app.apk') && sum.includes('*PX7K2M*'));
+
+  const st = buildReport({ ...base, kind: 'statement' });
+  assert.ok(st.includes('🏠 *Casa* — extrato completo'));
+  assert.ok(st.includes('🧾 *Extrato — 3 lançamentos*'));
+  const i = st.indexOf('28/10 🛒 Mercado do mês — R$ 800,00');
+  assert.ok(i > 0 && i < st.indexOf('03/11 🛒 Feira'), 'mais antigo primeiro');
+  assert.ok(st.includes('   Pago por Renato · 60/40'));
+  assert.ok(st.includes('   Paula → Renato (acerto)'));
+  assert.ok(st.includes('_Outubro 2026_') && st.includes('_Novembro 2026_'));
+
+  const month = buildReport({ ...base, kind: 'summary', month: '2026-11-01', entries: entries.slice(0, 1) });
+  assert.ok(month.includes('📅 Período: 01/11/2026 a 30/11/2026 (Novembro 2026)'));
+  assert.equal(ruleLabel({ ...entries[0], shares: [{ member_id: P, share_cents: 10000, basis_points: null }] }, [renato, paula]), 'só Paula');
+
+  const settled = buildReport({ ...base, kind: 'summary', entries: [entries[1], e('4', '2026-11-04', 'Acerto', 32000, P, [], 'transfer', R)] });
+  assert.ok(settled.includes('✅ Ninguém deve nada no período.'));
+});

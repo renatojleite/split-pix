@@ -3,6 +3,13 @@
 
 export type PixKeyType = 'cpf' | 'phone' | 'email' | 'random';
 
+export const PIX_KEY_TYPES: { value: PixKeyType; label: string; placeholder: string; keyboard: 'default' | 'number-pad' | 'phone-pad' | 'email-address' }[] = [
+  { value: 'cpf', label: 'CPF/CNPJ', placeholder: '000.000.000-00', keyboard: 'number-pad' },
+  { value: 'phone', label: 'Celular', placeholder: '(11) 98765-4321', keyboard: 'phone-pad' },
+  { value: 'email', label: 'E-mail', placeholder: 'voce@email.com', keyboard: 'email-address' },
+  { value: 'random', label: 'Aleatória', placeholder: '123e4567-e89b-12d3-…', keyboard: 'default' },
+];
+
 export type PixInput = {
   keyType: PixKeyType;
   key: string;

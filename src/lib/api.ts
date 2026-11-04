@@ -133,6 +133,18 @@ export function useUpdateGroup(groupId: string) {
   });
 }
 
+/** Exclui o grupo para todos (só quem criou). No banco é exclusão lógica. */
+export function useDeleteGroup(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => must(await supabase.rpc('delete_group', { p_group_id: groupId })),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.groups });
+      qc.removeQueries({ queryKey: keys.group(groupId) });
+    },
+  });
+}
+
 export function useDuplicateGroup(groupId: string) {
   const qc = useQueryClient();
   return useMutation({

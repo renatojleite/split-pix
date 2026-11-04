@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
@@ -6,7 +7,7 @@ import { useUserId } from '@/lib/auth';
 import { formatBRL } from '@/lib/money';
 import { shownPeople, summarize } from '@/lib/summary';
 import { colors, space } from '@/theme';
-import { Avatar, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle, SplitBar } from '../ui';
+import { Avatar, Button, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle, SplitBar } from '../ui';
 import { MonthNav } from './month-nav';
 
 export function SummaryTab({ detail, month, onMonth }: {
@@ -41,6 +42,8 @@ export function SummaryTab({ detail, month, onMonth }: {
         <Chip label="Por mês" selected={scope === 'month'} onPress={() => setScope('month')} />
       </View>
       {scope === 'month' ? <MonthNav month={month} onMonth={onMonth} /> : null}
+      <Button title="Compartilhar relatório" icon="share" variant="secondary"
+        onPress={() => router.push({ pathname: '/g/[id]/relatorio', params: { id: detail.group.id, ...(scope === 'month' ? { month } : {}) } })} />
 
       <View style={{ flexDirection: 'row', gap: space.md }}>
         <Stat label="Gasto total" value={formatBRL(s.spent)} />

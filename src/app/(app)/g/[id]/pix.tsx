@@ -5,12 +5,13 @@ import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, Share, Text,
 import QRCode from 'react-native-qrcode-svg';
 
 import { Button, Card, Chip, ErrorText, Field, Header, Input, Loading, Screen, Segmented } from '@/components/ui';
-import { useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
+import { useGroup, useSaveEntry, useSetMemberPix, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { today } from '@/lib/dates';
 import { centsFromInput, formatBRL, inputFromCents } from '@/lib/money';
-import { buildPixPayload, normalizePixKey, type PixKeyType } from '@/lib/pix';
+import { buildPixPayload, normalizePixKey, PIX_KEY_TYPES, type PixKeyType } from '@/lib/pix';
 import { PREF, usePref, type PixProfile } from '@/lib/prefs';
+import type { Member } from '@/lib/types';
 import { colors, space } from '@/theme';
 
 type Mode = 'receive' | 'pay';
@@ -18,12 +19,6 @@ type Mode = 'receive' | 'pay';
 // Do cartão de saldo vêm mode/from/to/amount; pelo menu do grupo chegam vazios (Pix livre).
 type Params = { id: string; mode?: Mode; from?: string; to?: string; amount?: string };
 
-const KEY_TYPES: { value: PixKeyType; label: string; placeholder: string; keyboard: 'default' | 'number-pad' | 'phone-pad' | 'email-address' }[] = [
-  { value: 'cpf', label: 'CPF/CNPJ', placeholder: '000.000.000-00', keyboard: 'number-pad' },
-  { value: 'phone', label: 'Celular', placeholder: '(11) 98765-4321', keyboard: 'phone-pad' },
-  { value: 'email', label: 'E-mail', placeholder: 'voce@email.com', keyboard: 'email-address' },
-  { value: 'random', label: 'Aleatória', placeholder: '123e4567-e89b-12d3-…', keyboard: 'default' },
-];
 
 export default function PixScreen() {
   const params = useLocalSearchParams<Params>();
@@ -39,9 +34,13 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   const others = detail.members.filter((m) => m.id !== me?.id);
   const fromDebt = !!params.from; // veio de um saldo: modo e pessoas já definidos
 
-  // Chaves salvas só neste celular: a minha (para receber) e as dos outros (para pagar).
+  const setMemberPix = useSetMemberPix(detail.group.id);
+  // A chave vem do grupo (cadastro do participante). As salvas neste celular ficam como reserva
+  // (versões antigas do app e chaves de quem já tem conta mas ainda não cadastrou a própria).
   const [myKey, setMyKey] = usePref<PixProfile | null>(PREF.pix, null);
   const [othersKeys, setOthersKeys] = usePref<Record<string, PixProfile>>(PREF.pixOthers, {});
+  const fromRow = (m: Member | undefined): PixProfile | null =>
+    m?.pix_key_type && m.pix_key ? { keyType: m.pix_key_type, key: m.pix_key, name: m.pix_name ?? m.display_name, city: m.pix_city ?? '' } : null;
 
   const initialMode: Mode = params.mode ?? 'receive';
   const initialOther =
@@ -52,7 +51,9 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   const other = detail.members.find((m) => m.id === otherId);
 
   const profileFor = (m: Mode, oid: string | null): PixProfile | null =>
-    m === 'receive' ? myKey : oid ? othersKeys[oid] ?? null : null;
+    m === 'receive'
+      ? fromRow(me) ?? myKey
+      : oid ? fromRow(detail.members.find((x) => x.id === oid)) ?? othersKeys[oid] ?? null : null;
   const defaultName = (m: Mode, oid: string | null) =>
     m === 'receive' ? me?.display_name ?? '' : detail.members.find((x) => x.id === oid)?.display_name ?? '';
 
@@ -103,6 +104,14 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
     const profile = { keyType, key: key.trim(), name: name.trim(), city: city.trim() };
     if (mode === 'receive') setMyKey(profile);
     else if (otherId) setOthersKeys({ ...othersKeys, [otherId]: profile });
+    // Guarda no grupo quando pode: a própria chave, ou a de quem ainda não tem conta.
+    const target = mode === 'receive' ? me : other;
+    const row = fromRow(target);
+    const normalized = normalizePixKey(keyType, key);
+    if (target && (target.user_id === userId || !target.user_id)
+      && (row?.key !== normalized || row?.keyType !== keyType || row?.name !== profile.name || row?.city !== profile.city)) {
+      setMemberPix.mutate({ memberId: target.id, profile: { ...profile, key: normalized } });
+    }
     setEditingKey(false);
     setGenerated(true);
   }
@@ -154,7 +163,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
     ]);
   }
 
-  const typeInfo = KEY_TYPES.find((t) => t.value === keyType)!;
+  const typeInfo = PIX_KEY_TYPES.find((t) => t.value === keyType)!;
   const canRegister = !!payerId && !!receiverId && payerId !== receiverId;
 
   return (
@@ -211,7 +220,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
               {mode === 'receive' ? 'Sua chave Pix' : `Chave Pix de ${otherName}`}
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {KEY_TYPES.map((t) => (
+              {PIX_KEY_TYPES.map((t) => (
                 <Chip key={t.value} label={t.label} selected={keyType === t.value} onPress={() => setKeyType(t.value)} />
               ))}
             </View>
@@ -223,9 +232,9 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
             <Input value={city} onChangeText={setCity} placeholder="Cidade (opcional)" maxLength={30}
               style={{ backgroundColor: colors.surface }} />
             <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
-              {mode === 'receive'
-                ? 'Fica salva só neste celular, para as próximas vezes. Não é enviada ao grupo.'
-                : `Peça a chave para ${otherName}. Fica salva só neste celular para as próximas vezes.`}
+              {mode === 'receive' || !other?.user_id
+                ? 'Fica salva no grupo, visível só para os membros. Aparece também no relatório.'
+                : `Peça a chave para ${otherName}. Fica salva neste celular; ${otherName} pode cadastrar a própria em Divisão › Participantes.`}
             </Text>
           </Card>
         ) : (

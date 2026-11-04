@@ -231,6 +231,23 @@ ok(!!(await fails(A, `update group_members set pix_key='+5511900000000' where id
 await as(A, `select set_member_pix($1, null, null, null)`, [R2]);
 ok((await as(A, `select pix_key is null k from group_members where id=$1`, [R2]))[0].k, 'limpar a chave');
 
+// Editar e excluir grupo
+const [{ g3 }] = await as(A, `select create_group('Praia', '🏖️', 'Renato', array['Paula'], array[5000, 5000]) g3`);
+const g3m = await as(A, `select id from group_members where group_id=$1 order by position`, [g3]);
+const [{ invite_code: code3 }] = await as(A, `select invite_code from groups where id=$1`, [g3]);
+await as(B, `select accept_invite($1, $2)`, [code3, g3m[1].id]);
+await as(A, `update groups set name='Praia 2027', emoji='🌴' where id=$1`, [g3]);
+ok((await as(B, `select name, emoji from groups where id=$1`, [g3]))[0].emoji === '🌴', 'dono edita nome e emoji');
+await as(B, `update groups set name='Hackeado' where id=$1`, [g3]);
+ok((await as(A, `select name from groups where id=$1`, [g3]))[0].name === 'Praia 2027', 'membro não renomeia');
+ok(!!(await fails(B, `select delete_group($1)`, [g3])), 'só o dono exclui');
+await as(A, `select save_entry(p_group_id => $1, p_type => 'expense', p_title => 'Hotel', p_amount_cents => 1000, p_paid_by => $2, p_occurred_on => '2026-11-04')`, [g3, g3m[0].id]);
+await as(A, `select delete_group($1)`, [g3]);
+ok((await as(B, `select count(*)::int n from groups where id=$1`, [g3]))[0].n === 0, 'grupo excluído some para os membros');
+ok((await as(A, `select count(*)::int n from entries where group_id=$1`, [g3]))[0].n === 0, 'lançamentos somem junto');
+ok(!!(await fails(C, `select accept_invite($1, null, 'Ana')`, [code3])), 'convite do grupo excluído não funciona');
+ok((await as(A, `select count(*)::int n from groups where id=$1`, [g]))[0].n === 1, 'outros grupos seguem normais');
+
 ok(!!(await (async () => { try { await db.exec(`reset role; set role anon;`); await db.query(`select preview_invite('AAAAAA')`); return null; } catch (e) { return e.message; } finally { await db.exec('reset role;'); } })()), 'sem login não chama funções');
 
 console.log(failures ? `\n${failures} falha(s)` : '\ntodos os testes passaram');

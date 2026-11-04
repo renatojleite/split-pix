@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { useAddCategory, useAddMember, useUpdateGroup, type GroupDetail } from '@/lib/api';
+import { useAddCategory, useAddMember, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { monthLabel, today } from '@/lib/dates';
 import { formatPercent } from '@/lib/money';
@@ -18,10 +18,8 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
   const { group, members, categories, rules } = detail;
   const now = today();
   const defaultRule = effectiveRule(rules, null, now);
-  const isOwner = members.some((m) => m.user_id === userId && m.role === 'owner');
   const addMember = useAddMember(group.id);
   const addCategory = useAddCategory(group.id);
-  const update = useUpdateGroup(group.id);
   const [newMember, setNewMember] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState<string | null>(null);
   const [newEmoji, setNewEmoji] = useState('🏷️');
@@ -93,7 +91,7 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
 
       <SectionTitle>Participantes</SectionTitle>
       <Text style={{ fontSize: 13, color: colors.muted, marginTop: -4 }}>
-        Toque numa pessoa para mudar o nome ou remover.
+        Toque numa pessoa para mudar o nome, a chave Pix ou remover.
       </Text>
       <Card style={{ padding: 0 }}>
         {members.map((m, i) => (
@@ -141,15 +139,8 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
       <Button variant="secondary" icon="copy" title="Duplicar grupo"
         onPress={() => router.push({ pathname: '/g/[id]/duplicar', params: { id: group.id } })} />
 
-      {isOwner ? (
-        <Button variant="ghost" title={group.archived_at ? 'Desarquivar grupo' : 'Arquivar grupo'}
-          onPress={() => Alert.alert(
-            group.archived_at ? 'Desarquivar grupo?' : 'Arquivar grupo?',
-            group.archived_at ? undefined : 'Ele sai da lista principal e o código de convite para de funcionar. Nada é apagado.',
-            [{ text: 'Cancelar', style: 'cancel' },
-             { text: 'Confirmar', onPress: () => update.mutate({ archived_at: group.archived_at ? null : new Date().toISOString() }) }],
-          )} />
-      ) : null}
+      <Button variant="ghost" title="Editar, arquivar ou excluir grupo"
+        onPress={() => router.push({ pathname: '/g/[id]/editar', params: { id: group.id } })} />
     </ScrollView>
   );
 }

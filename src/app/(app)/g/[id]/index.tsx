@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionSheet } from '@/components/action-sheet';
@@ -40,10 +40,11 @@ export default function GroupScreen() {
       <View style={{ paddingHorizontal: space.xl, gap: space.md }}>
         <Header
           center={
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Pressable onPress={() => router.push({ pathname: '/g/[id]/editar', params: { id } })} accessibilityRole="button"
+              accessibilityLabel={`Editar ${g.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <EmojiTile emoji={g.emoji} size={36} />
               <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }} numberOfLines={1}>{g.name}</Text>
-            </View>
+            </Pressable>
           }
           right={
             <View style={{ flexDirection: 'row' }}>
@@ -76,8 +77,12 @@ export default function GroupScreen() {
       ) : null}
 
       <ActionSheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={`${g.emoji} ${g.name}`} actions={[
+        { emoji: '✏️', label: 'Editar grupo', hint: 'Nome, emoji, arquivar ou excluir',
+          onPress: () => router.push({ pathname: '/g/[id]/editar', params: { id } }) },
         { emoji: '💸', label: 'Criar pagamento Pix', hint: 'Cobrar ou pagar com QR/código, qualquer valor',
           onPress: () => router.push({ pathname: '/g/[id]/pix', params: { id } }) },
+        { emoji: '📊', label: 'Compartilhar relatório', hint: 'Resumido ou extrato completo, pelo WhatsApp',
+          onPress: () => router.push({ pathname: '/g/[id]/relatorio', params: { id } }) },
         { emoji: '📋', label: 'Duplicar grupo', hint: 'Mesmas pessoas, categorias e divisão',
           onPress: () => router.push({ pathname: '/g/[id]/duplicar', params: { id } }) },
         { emoji: '🔗', label: 'Convidar', hint: 'Código, QR e link do app',

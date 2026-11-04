@@ -1,5 +1,5 @@
 // Preferências guardadas só neste celular (localStorage via expo-sqlite).
-// A chave Pix fica aqui de propósito: não vai para o servidor nem para o grupo.
+// Chaves Pix aqui são só reserva: a oficial fica no grupo (group_members.pix_*).
 import 'expo-sqlite/localStorage/install';
 import { useState } from 'react';
 

@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateField } from '@/components/date-field';
 import { EmojiPicker } from '@/components/emoji-picker';
@@ -352,6 +353,7 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🏷️');
   const [picking, setPicking] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const scroller = useRef<ScrollViewInstance>(null);
   const shownFor = useRef<string | null>(null);
 
@@ -364,7 +366,16 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
   }
 
   return (
-    <Field label="Categoria">
+    <View style={{ gap: space.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={type.label}>Categoria</Text>
+        {categories.length ? (
+          <Pressable onPress={() => setShowAll(true)} hitSlop={10} accessibilityRole="button"
+            accessibilityLabel={`Ver todas as ${categories.length} categorias`}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Ver todas ({categories.length})</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {/* Uma linha só, rolando para o lado; vai até a borda da tela. */}
       <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         style={{ marginHorizontal: -space.xl }}
@@ -398,6 +409,54 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
           <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
         </View>
       ) : null}
-    </Field>
+      <AllCategories visible={showAll} onClose={() => setShowAll(false)} categories={categories} value={value}
+        onPick={(id) => { shownFor.current = null; onChange(id); setShowAll(false); }}
+        onNew={() => { setShowAll(false); setCreating(true); }} />
+    </View>
+  );
+}
+
+/** Todas as categorias numa folha que sobe de baixo, com busca quando são muitas. */
+function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
+  visible: boolean; onClose: () => void; categories: Category[]; value: string | null;
+  onPick: (id: string | null) => void; onNew: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState('');
+  const plain = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const shown = query.trim() ? categories.filter((c) => plain(c.name).includes(plain(query.trim()))) : categories;
+  const close = () => { setQuery(''); onClose(); };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
+      <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={close} accessibilityLabel="Fechar" />
+      <View style={{ maxHeight: '75%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingTop: space.sm, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
+        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.divider }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.xl }}>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '700', color: colors.text }}>Categorias</Text>
+          {value ? (
+            <Pressable onPress={() => { setQuery(''); onPick(null); }} hitSlop={10}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>Sem categoria</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {categories.length > 8 ? (
+          <Input value={query} onChangeText={setQuery} placeholder="Buscar categoria" autoCorrect={false}
+            style={{ marginHorizontal: space.xl, height: 48 }} />
+        ) : null}
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: space.xl,
+          flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {shown.map((c) => (
+            <Chip key={c.id} label={`${c.emoji} ${c.name}`} selected={value === c.id}
+              onPress={() => { setQuery(''); onPick(value === c.id ? null : c.id); }} />
+          ))}
+          {!shown.length ? <Text style={{ fontSize: 15, color: colors.muted }}>Nenhuma categoria com esse nome.</Text> : null}
+        </ScrollView>
+        <Pressable onPress={() => { setQuery(''); onNew(); }} hitSlop={8} style={{ paddingHorizontal: space.xl }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>＋ Nova categoria</Text>
+        </Pressable>
+      </View>
+    </Modal>
   );
 }
