@@ -5,9 +5,23 @@ import QRCode from 'react-native-qrcode-svg';
 import { Button, ErrorText, Header, Loading, Screen } from '@/components/ui';
 import { useGroup, useRegenerateInvite } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
+import { APK_DOWNLOAD_URL } from '@/lib/config';
 import { colors, space } from '@/theme';
 
-const inviteLink =(code: string) => `splitpix://convite/${code}`;
+const inviteLink = (code: string) => `splitpix://convite/${code}`;
+
+/** Texto para WhatsApp/SMS: o link https vira clicável; o código serve para quem já tem o app. */
+function inviteMessage(groupName: string, emoji: string, code: string) {
+  return [
+    `Oi! Vamos organizar as contas do grupo "${groupName}" ${emoji} no split-pix.`,
+    '',
+    `1. Baixe o app (Android): ${APK_DOWNLOAD_URL}`,
+    '2. Abra, entre com seu e-mail e toque em Participar',
+    `3. Digite o código: *${code}*`,
+    '',
+    'Se o Android avisar, permita "instalar apps desta fonte".',
+  ].join('\n');
+}
 
 export default function ConviteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,7 +36,7 @@ export default function ConviteScreen() {
   return (
     <Screen footer={<>
       <Button title="Compartilhar convite" icon="share" onPress={() => Share.share({
-        message: `Entra no grupo "${g.name}" no split-pix! Código: ${g.invite_code}\n${inviteLink(g.invite_code)}`,
+        message: inviteMessage(g.name, g.emoji, g.invite_code),
       })} />
       {isOwner ? (
         <Button title="Gerar novo código" variant="ghost" loading={regenerate.isPending} onPress={() =>
@@ -41,6 +55,9 @@ export default function ConviteScreen() {
           <QRCode value={inviteLink(g.invite_code)} size={220} color={colors.text} backgroundColor="#FFFFFF" />
         </View>
         <Text selectable style={{ fontSize: 36, fontWeight: '700', letterSpacing: 8, color: colors.text }}>{g.invite_code}</Text>
+        <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted, textAlign: 'center' }}>
+          Ao compartilhar, a mensagem já leva o link para baixar o app, para quem ainda não tem.
+        </Text>
         <ErrorText>{regenerate.error?.message}</ErrorText>
       </View>
     </Screen>

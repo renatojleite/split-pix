@@ -49,12 +49,13 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Renomear
-        run: cp android/app/build/outputs/apk/release/app-release.apk split-pix-${{ github.run_number }}.apk
+        # Nome fixo (split-pix.apk) para o link "última versão" usado no convite do app.
+        run: cp android/app/build/outputs/apk/release/app-release.apk split-pix.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: split-pix-apk
-          path: split-pix-${{ github.run_number }}.apk
+          path: split-pix.apk
 
       - name: Publicar Release
         uses: softprops/action-gh-release@v2
@@ -62,5 +63,7 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: split-pix teste ${{ github.run_number }}
           body: APK de teste. Baixe no Android e permita "instalar apps desta fonte".
-          files: split-pix-${{ github.run_number }}.apk
-          prerelease: true
+          files: split-pix.apk
+          # Marcada como "latest" para releases/latest/download/split-pix.apk sempre apontar para esta.
+          prerelease: false
+          make_latest: true
