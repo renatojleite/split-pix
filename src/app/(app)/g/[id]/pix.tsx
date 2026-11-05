@@ -177,7 +177,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
             <Button title={mode === 'receive' ? 'Já recebi — registrar acerto' : 'Já paguei — registrar acerto'}
               variant="positive" onPress={registerSettlement} loading={save.isPending} />
           ) : (
-            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+            <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center' }}>
               Escolha a outra pessoa para poder registrar o acerto depois.
             </Text>
           )}
@@ -192,7 +192,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
           ]} />
         ) : null}
 
-        <Text style={{ fontSize: 15, lineHeight: 22, color: colors.muted }}>
+        <Text style={{ fontSize: 12, lineHeight: 18, color: colors.muted }}>
           {mode === 'receive'
             ? `${otherName[0].toUpperCase()}${otherName.slice(1)} lê o QR (ou cola o código) no app do banco, e o valor já vem preenchido.`
             : `Gere o código com a chave de ${otherName}, copie e cole no app do seu banco em Pix › Copia e Cola: valor e quem recebe já vêm preenchidos.`}
@@ -200,7 +200,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
 
         {!fromDebt && others.length > 0 ? (
           <Field label={mode === 'receive' ? 'Quem vai pagar' : 'Para quem'}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {others.map((m) => (
                 <Chip key={m.id} label={m.display_name} color={m.color} selected={otherId === m.id}
                   onPress={() => (mode === 'pay' ? switchTo('pay', otherId === m.id ? null : m.id) : setOtherId(otherId === m.id ? null : m.id))} />
@@ -216,10 +216,10 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
 
         {mode === 'pay' && !otherId ? null : editingKey ? (
           <Card style={{ gap: space.md }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>
               {mode === 'receive' ? 'Sua chave Pix' : `Chave Pix de ${otherName}`}
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {PIX_KEY_TYPES.map((t) => (
                 <Chip key={t.value} label={t.label} selected={keyType === t.value} onPress={() => setKeyType(t.value)} />
               ))}
@@ -231,7 +231,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
               style={{ backgroundColor: colors.surface }} />
             <Input value={city} onChangeText={setCity} placeholder="Cidade (opcional)" maxLength={30}
               style={{ backgroundColor: colors.surface }} />
-            <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+            <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
               {mode === 'receive' || !other?.user_id
                 ? 'Fica salva no grupo, visível só para os membros. Aparece também no relatório.'
                 : `Peça a chave para ${otherName}. Fica salva neste celular; ${otherName} pode cadastrar a própria em Divisão › Participantes.`}
@@ -240,14 +240,14 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
         ) : (
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontSize: 13, color: colors.muted }}>
+              <Text style={{ fontSize: 11, color: colors.muted }}>
                 {mode === 'receive' ? 'Você recebe em' : `${otherName} recebe em`} ({typeInfo.label})
               </Text>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }} numberOfLines={1}>{key}</Text>
-              <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>{name}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }} numberOfLines={1}>{key}</Text>
+              <Text style={{ fontSize: 11, color: colors.muted }} numberOfLines={1}>{name}</Text>
             </View>
             <Pressable onPress={() => { setEditingKey(true); setGenerated(false); }} hitSlop={8}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>Alterar</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>Alterar</Text>
             </Pressable>
           </Card>
         )}
@@ -256,23 +256,23 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
           <View style={{ gap: space.md, alignItems: 'center' }}>
             {mode === 'pay' ? (
               <>
-                <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text }}>{formatBRL(amount)}</Text>
+                <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }}>{formatBRL(amount)}</Text>
                 <Button title={copied ? 'Código copiado ✓ — agora cole no banco' : 'Copiar código Pix'} icon="copy"
                   onPress={copy} style={{ alignSelf: 'stretch' }} />
-                <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted, textAlign: 'center' }}>
+                <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted, textAlign: 'center' }}>
                   No app do seu banco: Pix › Pix Copia e Cola › colar. Confira o nome de {otherName} antes de confirmar.
                 </Text>
               </>
             ) : null}
-            <View style={{ padding: 16, backgroundColor: '#FFFFFF', borderRadius: 24, borderWidth: 1, borderColor: colors.divider }}>
+            <View style={{ padding: 13, backgroundColor: '#FFFFFF', borderRadius: 19, borderWidth: 1, borderColor: colors.divider }}>
               <QRCode value={payload} size={mode === 'pay' ? 180 : 240} color="#000000" backgroundColor="#FFFFFF" ecl="M" />
             </View>
             {mode === 'receive' ? (
-              <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text }}>{formatBRL(amount)}</Text>
+              <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }}>{formatBRL(amount)}</Text>
             ) : null}
-            <Card style={{ alignSelf: 'stretch', gap: 6 }}>
-              <Text style={{ fontSize: 13, color: colors.muted }}>Pix copia e cola</Text>
-              <Text selectable numberOfLines={3} style={{ fontSize: 12, color: colors.textSoft, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+            <Card style={{ alignSelf: 'stretch', gap: 5 }}>
+              <Text style={{ fontSize: 11, color: colors.muted }}>Pix copia e cola</Text>
+              <Text selectable numberOfLines={3} style={{ fontSize: 11, color: colors.textSoft, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
                 {payload}
               </Text>
             </Card>
@@ -283,7 +283,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
               </View>
             ) : null}
             <Button title="Compartilhar em outro app" variant="ghost" onPress={() => Share.share({ message })} style={{ alignSelf: 'stretch' }} />
-            <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted, textAlign: 'center' }}>
+            <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted, textAlign: 'center' }}>
               O split-pix só gera o código e não acompanha o pagamento. Depois do Pix, registre o acerto para atualizar o saldo.
             </Text>
           </View>

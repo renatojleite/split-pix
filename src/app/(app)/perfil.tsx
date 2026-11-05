@@ -26,15 +26,15 @@ function ProfileForm({ profile }: { profile: Profile }) {
         { text: 'Sair', style: 'destructive', onPress: () => signOut() },
       ])} />}>
       <Header title="Perfil" />
-      <View style={{ alignItems: 'center', gap: 12, paddingVertical: 8 }}>
-        <Avatar name={name || profile.email || '?'} color={colors.primary} size={88} />
+      <View style={{ alignItems: 'center', gap: 10, paddingVertical: 6 }}>
+        <Avatar name={name || profile.email || '?'} color={colors.primary} size={70} />
         <Text style={type.title}>{name || 'Sem nome'}</Text>
       </View>
       <Field label="Nome" hint="É como seu nome aparece nos grupos que você criar.">
         <Input value={name} onChangeText={setName} placeholder="Seu nome" />
       </Field>
       {changed ? <Button title="Salvar nome" onPress={() => save.mutate(name)} loading={save.isPending} /> : null}
-      <Card style={{ gap: 4 }}>
+      <Card style={{ gap: 3 }}>
         <Text style={type.caption}>E-mail</Text>
         <Text style={type.body}>{profile.email}</Text>
       </Card>

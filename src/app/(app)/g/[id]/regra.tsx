@@ -57,7 +57,7 @@ function RuleForm({ detail, categoryId }: { detail: GroupDetail; categoryId: str
       <Header title={category ? 'Categoria' : 'Padrão do grupo'} />
       {category ? <CategoryEditor groupId={detail.group.id} category={category} /> : null}
       {category ? <SectionTitle>Divisão desta categoria</SectionTitle> : null}
-      <Text style={{ fontSize: 15, lineHeight: 22, color: colors.muted }}>
+      <Text style={{ fontSize: 12, lineHeight: 18, color: colors.muted }}>
         {category
           ? `Lançamentos de ${category.name} usam este % em vez do padrão do grupo. Dá para ajustar item a item no lançamento.`
           : 'Vale para todo lançamento cuja categoria não tem % próprio.'}
@@ -66,10 +66,10 @@ function RuleForm({ detail, categoryId }: { detail: GroupDetail; categoryId: str
         <PercentEditor rows={members.map((m) => ({ key: m.id, name: m.display_name, color: m.color }))}
           value={bps} onChange={setBps} />
       </Card>
-      <View style={{ gap: 4 }}>
+      <View style={{ gap: 3 }}>
         <Text style={type.label}>A partir de</Text>
         <MonthNav month={month} onMonth={setMonth} />
-        <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+        <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
           Lançamentos a partir de {monthLabel(month).toLowerCase()} usam esta divisão. Os já feitos não mudam.
         </Text>
       </View>
@@ -90,14 +90,14 @@ function CategoryEditor({ groupId, category }: { groupId: string; category: Cate
   return (
     <View style={{ gap: space.sm }}>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <EmojiTile emoji={emoji} size={56} onPress={() => setPicking(true)} label="Emoji da categoria" />
+        <EmojiTile emoji={emoji} size={45} onPress={() => setPicking(true)} label="Emoji da categoria" />
         <Input value={name} onChangeText={setName} maxLength={30} placeholder="Nome da categoria" style={{ flex: 1 }} />
       </View>
       {changed ? (
         <Button title="Salvar nome e emoji" variant="secondary" loading={update.isPending}
           onPress={() => update.mutate({ id: category.id, name, emoji })} />
       ) : null}
-      {update.isSuccess && !changed ? <Text style={{ fontSize: 13, color: colors.positive }}>Salvo ✓</Text> : null}
+      {update.isSuccess && !changed ? <Text style={{ fontSize: 11, color: colors.positive }}>Salvo ✓</Text> : null}
       <ErrorText>{update.error?.message}</ErrorText>
       <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
     </View>
@@ -123,7 +123,7 @@ function DeleteCategory({ groupId, category }: { groupId: string; category: Cate
     <View style={{ gap: space.sm, paddingTop: space.lg }}>
       <Button title="Excluir categoria" variant="danger" icon="trash" onPress={confirm} loading={remove.isPending}
         disabled={usage.isLoading} />
-      <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+      <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center' }}>
         {usage.isLoading ? ' ' : count === 0 ? 'Sem lançamentos nesta categoria.' : `Usada em ${count} ${count === 1 ? 'lançamento' : 'lançamentos'}.`}
       </Text>
       <ErrorText>{remove.error?.message}</ErrorText>

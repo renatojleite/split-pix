@@ -28,7 +28,7 @@ export default function GroupScreen() {
   if (!group.data) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
-        {group.error ? <Text style={{ padding: 24, color: colors.negative }}>{group.error.message}</Text> : <Loading />}
+        {group.error ? <Text style={{ padding: 19, color: colors.negative }}>{group.error.message}</Text> : <Loading />}
       </SafeAreaView>
     );
   }
@@ -41,9 +41,9 @@ export default function GroupScreen() {
         <Header
           center={
             <Pressable onPress={() => router.push({ pathname: '/g/[id]/editar', params: { id } })} accessibilityRole="button"
-              accessibilityLabel={`Editar ${g.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <EmojiTile emoji={g.emoji} size={36} />
-              <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }} numberOfLines={1}>{g.name}</Text>
+              accessibilityLabel={`Editar ${g.name}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <EmojiTile emoji={g.emoji} size={29} />
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }} numberOfLines={1}>{g.name}</Text>
             </Pressable>
           }
           right={
@@ -70,9 +70,9 @@ export default function GroupScreen() {
 
       {tab === 'despesas' ? (
         // Acima da barra de navegação do Android (o app desenha por baixo dela).
-        <View style={{ position: 'absolute', bottom: insets.bottom + 20, alignSelf: 'center' }}>
+        <View style={{ position: 'absolute', bottom: insets.bottom + 16, alignSelf: 'center' }}>
           <Button title="Adicionar" icon="plus" onPress={() => router.push({ pathname: '/g/[id]/item', params: { id } })}
-            style={{ borderRadius: 28, paddingHorizontal: 28, elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }} />
+            style={{ borderRadius: 22, paddingHorizontal: 22, elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } }} />
         </View>
       ) : null}
 

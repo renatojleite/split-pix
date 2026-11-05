@@ -187,7 +187,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
             </View>
           ) : undefined} />
         {isEditing && entry?.recurrence_total ? (
-          <Text style={{ fontSize: 13, color: colors.muted }}>
+          <Text style={{ fontSize: 11, color: colors.muted }}>
             🔁 Ocorrência {entry.recurrence_index} de {entry.recurrence_total}. Alterações valem só para esta.
           </Text>
         ) : null}
@@ -200,7 +200,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
 
         <Field label="Título">
           <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <EmojiTile emoji={shownEmoji} size={56} onPress={() => setPicking(true)} label="Emoji do lançamento" />
+            <EmojiTile emoji={shownEmoji} size={45} onPress={() => setPicking(true)} label="Emoji do lançamento" />
             <Input value={title} onChangeText={setTitle} maxLength={80} style={{ flex: 1 }}
               placeholder={isTransfer ? 'Ex.: Acerto outubro' : kind === 'income' ? 'Ex.: Reembolso' : 'Ex.: Mercado'} />
           </View>
@@ -217,7 +217,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         </Field>
 
         <Field label={kind === 'expense' ? 'Pago por' : kind === 'income' ? 'Recebido por' : 'De'}>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             {members.map((m) => (
               <Chip key={m.id} label={m.id === me?.id ? `${m.display_name} (eu)` : m.display_name}
                 color={m.color} selected={paidBy === m.id} onPress={() => setPaidBy(m.id)} />
@@ -227,7 +227,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
 
         {isTransfer ? (
           <Field label="Para" hint="Transferência é um acerto entre vocês: não é dividida, só move o saldo.">
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {members.filter((m) => m.id !== paidBy).map((m) => (
                 <Chip key={m.id} label={m.display_name} color={m.color} selected={transferTo === m.id} onPress={() => setTransferTo(m.id)} />
               ))}
@@ -241,7 +241,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
 
         {!isEditing ? (
           <Field label="Repetir">
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
               <Chip label="Não" selected={repeatEvery === 'none'} onPress={() => setRepeatEvery('none')} />
               <Chip label="Todo mês" selected={repeatEvery === 'month'} onPress={() => setRepeatEvery('month')} />
               <Chip label="Toda semana" selected={repeatEvery === 'week'} onPress={() => setRepeatEvery('week')} />
@@ -249,12 +249,12 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
             {repeating ? (
               <Card style={{ gap: space.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>Quantas vezes</Text>
+                  <Text style={{ flex: 1, fontSize: 13, color: colors.text }}>Quantas vezes</Text>
                   <IconButton name="chevron-left" label="Menos vezes" onPress={() => setRepeatCount(Math.max(2, repeatCount - 1))} />
-                  <Text style={{ width: 40, textAlign: 'center', fontSize: 18, fontWeight: '700', color: colors.text }}>{repeatCount}×</Text>
+                  <Text style={{ width: 32, textAlign: 'center', fontSize: 14, fontWeight: '700', color: colors.text }}>{repeatCount}×</Text>
                   <IconButton name="chevron-right" label="Mais vezes" onPress={() => setRepeatCount(Math.min(36, repeatCount + 1))} />
                 </View>
-                <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+                <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
                   {dates.length <= 6 ? dates.map(dayMonth).join(' · ') : `${dayMonth(dates[0])} até ${dayMonth(dates[dates.length - 1])}`}
                   {'\n'}Cria {repeatCount} lançamentos de {formatBRL(amount)} — {formatBRL(amount * repeatCount)} no total. Cada um usa a divisão vigente na sua data.
                 </Text>
@@ -268,37 +268,37 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
             <View style={{ gap: space.md }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <Text style={type.label}>Divisão</Text>
-                <Text style={{ fontSize: 13, color: colors.muted }}>{sourceText}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted }}>{sourceText}</Text>
               </View>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 5 }}>
                 {([['default', 'Padrão'], ['equal', 'Igual'], ['percent', '%'], ['exact', 'R$']] as const).map(([v, l]) => (
                   <View key={v} style={{ flex: 1 }}>
                     <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === v }} onPress={() => changeMode(v)}
-                      style={{ height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+                      style={{ height: 29, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
                         backgroundColor: mode === v ? colors.inverse : colors.card }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: mode === v ? '#FFFFFF' : colors.textSoft }}>{l}</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: mode === v ? '#FFFFFF' : colors.textSoft }}>{l}</Text>
                     </Pressable>
                   </View>
                 ))}
               </View>
-              <SplitBar parts={members.map((m) => ({ color: m.color, bp: preview.shares.find((s) => s.memberId === m.id)?.bp ?? 0 }))} height={10} />
+              <SplitBar parts={members.map((m) => ({ color: m.color, bp: preview.shares.find((s) => s.memberId === m.id)?.bp ?? 0 }))} height={8} />
               <Card style={{ padding: 0 }}>
                 {members.map((m, i) => {
                   const share = preview.shares.find((s) => s.memberId === m.id);
                   const checkable = mode === 'default' || mode === 'equal';
                   const on = participants.has(m.id);
                   return (
-                    <View key={m.id} style={{ minHeight: 56, paddingHorizontal: space.lg, flexDirection: 'row', alignItems: 'center', gap: 10,
+                    <View key={m.id} style={{ minHeight: 45, paddingHorizontal: space.lg, flexDirection: 'row', alignItems: 'center', gap: 8,
                       borderBottomWidth: i === members.length - 1 ? 0 : 1, borderColor: colors.divider }}>
                       {checkable ? (
                         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={m.display_name}
                           onPress={() => toggle(m.id)} hitSlop={10}
-                          style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: on ? colors.primary : colors.muted,
+                          style={{ width: 19, height: 19, borderRadius: 5, borderWidth: 2, borderColor: on ? colors.primary : colors.muted,
                             backgroundColor: on ? colors.primary : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                          {on ? <Icon name="check" size={16} color="#FFFFFF" strokeWidth={3} /> : null}
+                          {on ? <Icon name="check" size={13} color="#FFFFFF" strokeWidth={3} /> : null}
                         </Pressable>
-                      ) : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: m.color }} />}
-                      <Text style={{ flex: 1, fontSize: 16, color: colors.text }} numberOfLines={1}>
+                      ) : <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color }} />}
+                      <Text style={{ flex: 1, fontSize: 13, color: colors.text }} numberOfLines={1}>
                         {m.id === me?.id ? `${m.display_name} (eu)` : m.display_name}
                       </Text>
                       {mode === 'percent' ? (
@@ -308,13 +308,13 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
                             setPercent({ ...percent, [m.id]: Number.isNaN(n) ? 0 : Math.min(10000, Math.round(n * 100)) });
                           }} />
                       ) : (
-                        <Text style={{ fontSize: 14, color: colors.muted }}>{formatPercent(share?.bp ?? 0)}%</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted }}>{formatPercent(share?.bp ?? 0)}%</Text>
                       )}
                       {mode === 'exact' ? (
                         <InlineNumber value={inputFromCents(exact[m.id] ?? 0) || '0,00'} prefix="R$" label={`Valor de ${m.display_name}`}
                           onChange={(t) => setExact({ ...exact, [m.id]: centsFromInput(t) })} />
                       ) : (
-                        <Text style={{ width: 104, textAlign: 'right', fontSize: 16, fontWeight: '700', color: colors.text }}>
+                        <Text style={{ width: 83, textAlign: 'right', fontSize: 13, fontWeight: '700', color: colors.text }}>
                           {formatBRL(share?.cents ?? 0)}
                         </Text>
                       )}
@@ -335,11 +335,11 @@ function InlineNumber({ value, onChange, prefix, suffix, label }: {
   value: string; onChange: (t: string) => void; prefix?: string; suffix?: string; label: string;
 }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, paddingHorizontal: 8, height: 40 }}>
-      {prefix ? <Text style={{ fontSize: 15, color: colors.muted, marginRight: 4 }}>{prefix}</Text> : null}
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 6, height: 32 }}>
+      {prefix ? <Text style={{ fontSize: 12, color: colors.muted, marginRight: 3 }}>{prefix}</Text> : null}
       <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} keyboardType="decimal-pad" selectTextOnFocus
-        style={{ minWidth: 44, padding: 0, fontSize: 16, fontWeight: '700', color: colors.text, textAlign: 'right' }} />
-      {suffix ? <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{suffix}</Text> : null}
+        style={{ minWidth: 35, padding: 0, fontSize: 13, fontWeight: '700', color: colors.text, textAlign: 'right' }} />
+      {suffix ? <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{suffix}</Text> : null}
     </View>
   );
 }
@@ -361,14 +361,14 @@ function CategoryPicker({ categories, value, onChange, groupId }: {
         {categories.length ? (
           <Pressable onPress={() => setShowAll(true)} hitSlop={10} accessibilityRole="button"
             accessibilityLabel={`Ver todas as ${categories.length} categorias`}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Ver todas ({categories.length})</Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.primary }}>Ver todas ({categories.length})</Text>
           </Pressable>
         ) : null}
       </View>
       {/* Uma linha só, rolando para o lado; vai até a borda da tela. */}
       <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
         style={{ marginHorizontal: -space.xl }}
-        contentContainerStyle={{ paddingHorizontal: space.xl, gap: 8 }}>
+        contentContainerStyle={{ paddingHorizontal: space.xl, gap: 6 }}>
         <Chip label="＋ Nova" onPress={() => setCreating('')} />
         {categories.map((c) => (
           <View key={c.id} onLayout={(e) => {
@@ -417,18 +417,18 @@ function NewCategory({ groupId, initialName, onClose, onCreated }: {
         <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
         <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
           paddingTop: space.sm, paddingHorizontal: space.xl, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
-          <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.divider }} />
-          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>Nova categoria</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <EmojiTile emoji={emoji} size={52} onPress={() => setPicking(true)} label="Emoji da categoria" />
+          <View style={{ alignSelf: 'center', width: 32, height: 3, borderRadius: 2, backgroundColor: colors.divider }} />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>Nova categoria</Text>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <EmojiTile emoji={emoji} size={42} onPress={() => setPicking(true)} label="Emoji da categoria" />
             <Input value={name} onChangeText={setName} placeholder="Nome da categoria" autoFocus maxLength={30}
-              style={{ flex: 1, height: 52 }} returnKeyType="done" onSubmitEditing={create} />
+              style={{ flex: 1, height: 42 }} returnKeyType="done" onSubmitEditing={create} />
           </View>
-          <Text style={{ fontSize: 13, color: colors.muted }}>Toque no emoji para trocar. A categoria vale para todo o grupo.</Text>
+          <Text style={{ fontSize: 11, color: colors.muted }}>Toque no emoji para trocar. A categoria vale para todo o grupo.</Text>
           <ErrorText>{add.error?.message}</ErrorText>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 48 }} onPress={onClose} />
-            <Button title="Criar" style={{ flex: 1, height: 48 }} disabled={!name.trim()} loading={add.isPending} onPress={create} />
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 38 }} onPress={onClose} />
+            <Button title="Criar" style={{ flex: 1, height: 38 }} disabled={!name.trim()} loading={add.isPending} onPress={create} />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -453,29 +453,29 @@ function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
       <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={close} accessibilityLabel="Fechar" />
       <View style={{ maxHeight: '75%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingTop: space.sm, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
-        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.divider }} />
+        <View style={{ alignSelf: 'center', width: 32, height: 3, borderRadius: 2, backgroundColor: colors.divider }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.xl }}>
-          <Text style={{ flex: 1, fontSize: 18, fontWeight: '700', color: colors.text }}>Categorias</Text>
+          <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: colors.text }}>Categorias</Text>
           {value ? (
             <Pressable onPress={() => { setQuery(''); onPick(null); }} hitSlop={10}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>Sem categoria</Text>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted }}>Sem categoria</Text>
             </Pressable>
           ) : null}
         </View>
         {categories.length > 8 ? (
           <Input value={query} onChangeText={setQuery} placeholder="Buscar categoria" autoCorrect={false}
-            style={{ marginHorizontal: space.xl, height: 48 }} />
+            style={{ marginHorizontal: space.xl, height: 38 }} />
         ) : null}
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: space.xl,
-          flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {shown.map((c) => (
             <Chip key={c.id} label={`${c.emoji} ${c.name}`} selected={value === c.id}
               onPress={() => { setQuery(''); onPick(value === c.id ? null : c.id); }} />
           ))}
-          {!shown.length ? <Text style={{ fontSize: 15, color: colors.muted }}>Nenhuma categoria com esse nome.</Text> : null}
+          {!shown.length ? <Text style={{ fontSize: 12, color: colors.muted }}>Nenhuma categoria com esse nome.</Text> : null}
         </ScrollView>
         <Pressable onPress={() => { setQuery(''); onNew(shown.length ? '' : query.trim()); }} hitSlop={8} style={{ paddingHorizontal: space.xl }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>
             {!shown.length && query.trim() ? `＋ Criar "${query.trim()}"` : '＋ Nova categoria'}
           </Text>
         </Pressable>

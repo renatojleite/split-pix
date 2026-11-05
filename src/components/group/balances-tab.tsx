@@ -30,7 +30,7 @@ export function BalancesTab({ detail, month, onMonth }: {
     router.push({ pathname: '/g/[id]/item', params: { id: detail.group.id, type: 'transfer', ...params } });
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 48, gap: space.md, paddingTop: space.sm }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 38, gap: space.md, paddingTop: space.sm }}>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         <Chip label="Acumulado" selected={scope === 'all'} onPress={() => setScope('all')} />
         <Chip label="Por mês" selected={scope === 'month'} onPress={() => setScope('month')} />
@@ -40,9 +40,9 @@ export function BalancesTab({ detail, month, onMonth }: {
       <ErrorText>{source.error?.message}</ErrorText>
 
       {!source.isLoading && s.transfers.length === 0 ? (
-        <Card style={{ gap: 4 }}>
-          <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text }}>Tudo certo</Text>
-          <Text style={{ fontSize: 14, color: colors.muted }}>Ninguém deve nada {scope === 'month' ? 'neste mês' : 'no total'}.</Text>
+        <Card style={{ gap: 3 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>Tudo certo</Text>
+          <Text style={{ fontSize: 11, color: colors.muted }}>Ninguém deve nada {scope === 'month' ? 'neste mês' : 'no total'}.</Text>
         </Card>
       ) : null}
 
@@ -53,22 +53,22 @@ export function BalancesTab({ detail, month, onMonth }: {
         const headline = iReceive ? `${name(t.from)} te deve` : iPay ? `Você deve a ${name(t.to)}` : `${name(t.from)} deve a ${name(t.to)}`;
         const params = { from: t.from, to: t.to, amount: String(t.cents) };
         return (
-          <Card key={i} style={{ gap: 12, backgroundColor: iReceive ? colors.positiveSoft : iPay ? colors.negativeSoft : colors.card, borderRadius: 24, padding: 20 }}>
-            <View style={{ gap: 4 }}>
-              <Text style={{ fontSize: 15, color: tone }}>{headline}</Text>
-              <Text style={{ fontSize: 34, fontWeight: '700', color: tone }}>{formatBRL(t.cents)}</Text>
+          <Card key={i} style={{ gap: 10, backgroundColor: iReceive ? colors.positiveSoft : iPay ? colors.negativeSoft : colors.card, borderRadius: 19, padding: 16 }}>
+            <View style={{ gap: 3 }}>
+              <Text style={{ fontSize: 12, color: tone }}>{headline}</Text>
+              <Text style={{ fontSize: 27, fontWeight: '700', color: tone }}>{formatBRL(t.cents)}</Text>
             </View>
             {iReceive ? (
               <>
                 <Button title="Receber via Pix" variant="positive"
                   onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode: 'receive', ...params } })} />
-                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 44 }} />
+                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 35 }} />
               </>
             ) : iPay ? (
               <>
                 <Button title="Pagar via Pix" variant="negative"
                   onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode: 'pay', ...params } })} />
-                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 44 }} />
+                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 35 }} />
               </>
             ) : (
               <Button title="Registrar acerto" onPress={() => openTransfer(params)} />
@@ -81,17 +81,17 @@ export function BalancesTab({ detail, month, onMonth }: {
       {shownPeople(s.people, members).map((p) => {
         const m = members.find((x) => x.id === p.memberId)!;
         return (
-          <Card key={m.id} style={{ gap: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Card key={m.id} style={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Avatar name={m.display_name} color={m.color} />
-              <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.text }}>
-                {m.display_name}{m.id === me?.id ? <Text style={{ fontSize: 14, fontWeight: '400', color: colors.muted }}>  você</Text> : null}
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.text }}>
+                {m.display_name}{m.id === me?.id ? <Text style={{ fontSize: 11, fontWeight: '400', color: colors.muted }}>  você</Text> : null}
               </Text>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted }}>
                 {formatBRL(p.balance, { sign: true })}
               </Text>
             </View>
-            <View style={{ gap: 4 }}>
+            <View style={{ gap: 3 }}>
               <Row label="Pagou" value={formatBRL(p.paid)} />
               <Row label="Parte nos gastos" value={formatBRL(p.share)} />
               {p.received || p.incomeShare ? <Row label="Receitas (recebeu / parte)" value={`${formatBRL(p.received)} / ${formatBRL(p.incomeShare)}`} /> : null}
@@ -104,26 +104,26 @@ export function BalancesTab({ detail, month, onMonth }: {
 
       <SectionTitle>{`Acertos ${scope === 'month' ? 'do mês' : 'registrados'}`}</SectionTitle>
       {settlements.length === 0 ? (
-        <Text style={{ fontSize: 14, color: colors.muted }}>Nenhum acerto {scope === 'month' ? 'neste mês' : 'ainda'}.</Text>
+        <Text style={{ fontSize: 11, color: colors.muted }}>Nenhum acerto {scope === 'month' ? 'neste mês' : 'ainda'}.</Text>
       ) : (
         <Card style={{ padding: 0 }}>
           {settlements.map((e, i) => (
-            <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: space.lg,
+            <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: space.lg,
               borderBottomWidth: i === settlements.length - 1 ? 0 : 1, borderColor: colors.divider }}>
-              <EmojiTile emoji={e.emoji ?? '🔁'} size={36} />
+              <EmojiTile emoji={e.emoji ?? '🔁'} size={29} />
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }} numberOfLines={1}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text }} numberOfLines={1}>
                   {name(e.paid_by)} → {name(e.transfer_to)}
                 </Text>
-                <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>{dayMonth(e.occurred_on)} · {e.title}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted }} numberOfLines={1}>{dayMonth(e.occurred_on)} · {e.title}</Text>
               </View>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{formatBRL(e.amount_cents)}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{formatBRL(e.amount_cents)}</Text>
             </View>
           ))}
         </Card>
       )}
 
-      <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+      <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
         Saldo = pagou − parte nos gastos + acertos enviados − acertos recebidos (receitas entram também). Atualiza na hora quando alguém do grupo lança.
       </Text>
     </ScrollView>
@@ -133,8 +133,8 @@ export function BalancesTab({ detail, month, onMonth }: {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <Text style={{ fontSize: 14, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSoft }}>{value}</Text>
+      <Text style={{ fontSize: 11, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSoft }}>{value}</Text>
     </View>
   );
 }

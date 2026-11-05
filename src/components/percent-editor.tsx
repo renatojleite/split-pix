@@ -35,13 +35,13 @@ export function PercentEditor({ rows, value, onChange }: {
 
   return (
     <View style={{ gap: space.md }}>
-      <SplitBar parts={rows.map((r, i) => ({ color: r.color, bp: value[i] ?? 0 }))} height={14} />
+      <SplitBar parts={rows.map((r, i) => ({ color: r.color, bp: value[i] ?? 0 }))} height={11} />
       {rows.map((r, i) => (
         <View key={r.key} style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: r.color }} />
-          <Text style={{ flex: 1, fontSize: 16, color: colors.text }} numberOfLines={1}>{r.name}</Text>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: r.color }} />
+          <Text style={{ flex: 1, fontSize: 13, color: colors.text }} numberOfLines={1}>{r.name}</Text>
           <StepButton icon="minus" label={`Diminuir ${r.name}`} onPress={() => set(i, (value[i] ?? 0) - STEP)} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, paddingHorizontal: 8, height: 40, minWidth: 72, justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 6, height: 32, minWidth: 58, justifyContent: 'center' }}>
             <TextInput
               accessibilityLabel={`Percentual de ${r.name}`}
               value={formatPercent(value[i] ?? 0)}
@@ -50,18 +50,18 @@ export function PercentEditor({ rows, value, onChange }: {
                 set(i, Number.isNaN(n) ? 0 : Math.round(n * 100));
               }}
               keyboardType="decimal-pad" selectTextOnFocus
-              style={{ fontSize: 17, fontWeight: '700', color: colors.text, textAlign: 'right', minWidth: 32, padding: 0 }} />
-            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>%</Text>
+              style={{ fontSize: 14, fontWeight: '700', color: colors.text, textAlign: 'right', minWidth: 26, padding: 0 }} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>%</Text>
           </View>
           <StepButton icon="plus" label={`Aumentar ${r.name}`} onPress={() => set(i, (value[i] ?? 0) + STEP)} />
         </View>
       ))}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Pressable onPress={() => onChange(equalBps(rows.length))} hitSlop={8}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Dividir igual</Text>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: colors.primary }}>Dividir igual</Text>
         </Pressable>
         {sum !== 10000 ? (
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.negative }}>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: colors.negative }}>
             Soma {formatPercent(sum)}% — precisa dar 100%
           </Text>
         ) : null}
@@ -73,9 +73,9 @@ export function PercentEditor({ rows, value, onChange }: {
 function StepButton({ icon, label, onPress }: { icon: 'plus' | 'minus'; label: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
+      style={({ pressed }) => ({ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface,
         alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-      {icon === 'plus' ? <Icon name="plus" size={18} /> : <View style={{ width: 14, height: 2, borderRadius: 1, backgroundColor: colors.text }} />}
+      {icon === 'plus' ? <Icon name="plus" size={14} /> : <View style={{ width: 11, height: 2, borderRadius: 1, backgroundColor: colors.text }} />}
     </Pressable>
   );
 }

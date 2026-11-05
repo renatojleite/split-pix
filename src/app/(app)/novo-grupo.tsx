@@ -50,7 +50,7 @@ function NewGroupForm({ initialName }: { initialName: string }) {
 
       <Field label="Nome do grupo">
         <View style={{ flexDirection: 'row', gap: space.sm }}>
-          <EmojiTile emoji={emoji} size={56} onPress={() => setPicking(true)} label="Emoji do grupo" />
+          <EmojiTile emoji={emoji} size={45} onPress={() => setPicking(true)} label="Emoji do grupo" />
           <Input value={name} onChangeText={setName} placeholder="Ex.: Casa" maxLength={60} autoFocus style={{ flex: 1 }} />
         </View>
       </Field>
@@ -61,7 +61,7 @@ function NewGroupForm({ initialName }: { initialName: string }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, borderBottomWidth: 1, borderColor: colors.divider }}>
             <Input value={myName} onChangeText={setMyName} placeholder="Seu nome"
               style={{ flex: 1, backgroundColor: 'transparent', paddingHorizontal: 0 }} />
-            <Text style={{ fontSize: 14, color: colors.muted }}>você</Text>
+            <Text style={{ fontSize: 11, color: colors.muted }}>você</Text>
           </View>
           {others.map((o, i) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, borderBottomWidth: 1, borderColor: colors.divider }}>
@@ -71,16 +71,16 @@ function NewGroupForm({ initialName }: { initialName: string }) {
               {others.length > 1 ? (
                 <Pressable accessibilityLabel="Remover participante" hitSlop={10}
                   onPress={() => setOthersAndResplit(others.filter((_, j) => j !== i))}>
-                  <Icon name="close" size={20} color={colors.muted} />
+                  <Icon name="close" size={16} color={colors.muted} />
                 </Pressable>
               ) : null}
             </View>
           ))}
-          <Pressable onPress={() => setOthersAndResplit([...others, ''])} style={{ height: 52, justifyContent: 'center', paddingHorizontal: space.lg }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: colors.primary }}>+ Adicionar participante</Text>
+          <Pressable onPress={() => setOthersAndResplit([...others, ''])} style={{ height: 42, justifyContent: 'center', paddingHorizontal: space.lg }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>+ Adicionar participante</Text>
           </Pressable>
         </Card>
-        <Text style={{ fontSize: 13, color: colors.muted }}>
+        <Text style={{ fontSize: 11, color: colors.muted }}>
           Quem ainda não tem o app entra depois pelo código do grupo e escolhe o próprio nome.
         </Text>
       </Field>
@@ -91,7 +91,7 @@ function NewGroupForm({ initialName }: { initialName: string }) {
             rows={people.map((p, i) => ({ key: String(i), name: p, color: COLORS[i % COLORS.length] }))}
             value={bps} onChange={setBps} />
         </Card>
-        <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+        <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
           Vale para todo lançamento sem regra própria. Depois dá para definir % por categoria e ajustar item a item.
         </Text>
       </Field>

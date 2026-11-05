@@ -15,16 +15,16 @@ export function ActionSheet({ visible, onClose, title, actions }: {
       <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar menu" />
       <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingTop: space.sm, paddingBottom: insets.bottom + space.lg }}>
-        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.divider, marginBottom: space.sm }} />
-        {title ? <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted, paddingHorizontal: space.xl, paddingVertical: space.sm }}>{title}</Text> : null}
+        <View style={{ alignSelf: 'center', width: 32, height: 3, borderRadius: 2, backgroundColor: colors.divider, marginBottom: space.sm }} />
+        {title ? <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, paddingHorizontal: space.xl, paddingVertical: space.sm }}>{title}</Text> : null}
         {actions.map((a) => (
           <Pressable key={a.label} accessibilityRole="menuitem" onPress={() => { onClose(); a.onPress(); }}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 60,
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 48,
               paddingHorizontal: space.xl, paddingVertical: space.md, backgroundColor: pressed ? colors.card : 'transparent' })}>
-            {a.emoji ? <Text style={{ fontSize: 24, width: 32, textAlign: 'center' }}>{a.emoji}</Text> : null}
+            {a.emoji ? <Text style={{ fontSize: 19, width: 26, textAlign: 'center' }}>{a.emoji}</Text> : null}
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontSize: 17, fontWeight: '600', color: a.destructive ? colors.negative : colors.text }}>{a.label}</Text>
-              {a.hint ? <Text style={{ fontSize: 13, color: colors.muted }}>{a.hint}</Text> : null}
+              <Text style={{ fontSize: 14, fontWeight: '600', color: a.destructive ? colors.negative : colors.text }}>{a.label}</Text>
+              {a.hint ? <Text style={{ fontSize: 11, color: colors.muted }}>{a.hint}</Text> : null}
             </View>
           </Pressable>
         ))}

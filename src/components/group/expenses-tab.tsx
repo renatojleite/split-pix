@@ -85,7 +85,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
       keyExtractor={(e) => e.id}
       stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={entries.isRefetching} onRefresh={() => { entries.refetch(); }} />}
-      contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 120, gap: space.sm }}
+      contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 96, gap: space.sm }}
       ListHeaderComponent={
         <View style={{ gap: space.md, paddingTop: space.sm }}>
           <MonthNav month={month} onMonth={onMonth} />
@@ -96,17 +96,17 @@ export function ExpensesTab({ detail, month, onMonth }: {
           <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
           <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} />
           {day ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 14, backgroundColor: colors.primarySoft }}>
-              <Text style={{ flex: 1, fontSize: 14, color: colors.primaryInk }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 11, backgroundColor: colors.primarySoft }}>
+              <Text style={{ flex: 1, fontSize: 11, color: colors.primaryInk }}>
                 Mostrando só <Text style={{ fontWeight: '700' }}>{dayLabel(day)}</Text> · {visible.length} {visible.length === 1 ? 'lançamento' : 'lançamentos'}
               </Text>
               <Pressable onPress={() => setPickedDay(null)} hitSlop={10} accessibilityRole="button">
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
               </Pressable>
             </View>
           ) : null}
           {list.length > 0 ? (
-            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para duplicar ou excluir</Text>
+            <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para duplicar ou excluir</Text>
           ) : null}
           {entries.isLoading ? <Loading /> : null}
           <ErrorText>{entries.error?.message}</ErrorText>
@@ -114,25 +114,25 @@ export function ExpensesTab({ detail, month, onMonth }: {
       }
       ListEmptyComponent={
         entries.isLoading ? undefined : (
-          <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 15, paddingVertical: 40 }}>
+          <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 12, paddingVertical: 32 }}>
             {day ? 'Nenhum lançamento neste dia.' : 'Nenhum lançamento neste mês.'}
           </Text>
         )
       }
       renderSectionHeader={({ section }) => (
-        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSoft, paddingTop: space.md }}>{section.title}</Text>
+        <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSoft, paddingTop: space.md }}>{section.title}</Text>
       )}
       renderItem={({ item: e }) => (
         <Card onPress={() => openItem({ entryId: e.id })} onLongPress={() => actions(e)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
-          <EmojiTile emoji={emojiOf(e)} size={40} />
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11 }}>
+          <EmojiTile emoji={emojiOf(e)} size={32} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text }} numberOfLines={1}>{e.title}</Text>
-            <Text style={{ fontSize: 13, color: colors.muted }} numberOfLines={1}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }} numberOfLines={1}>{e.title}</Text>
+            <Text style={{ fontSize: 11, color: colors.muted }} numberOfLines={1}>
               {e.recurrence_total ? `🔁 ${e.recurrence_index}/${e.recurrence_total} · ` : ''}{subtitle(e)}
             </Text>
           </View>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
             {formatBRL(e.amount_cents)}
           </Text>
         </Card>
@@ -143,9 +143,9 @@ export function ExpensesTab({ detail, month, onMonth }: {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-      <Text style={{ fontSize: 13, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }}>{value}</Text>
+    <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
+      <Text style={{ fontSize: 11, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{value}</Text>
     </View>
   );
 }

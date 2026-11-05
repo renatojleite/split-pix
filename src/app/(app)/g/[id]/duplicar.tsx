@@ -32,24 +32,24 @@ function DuplicateForm({ detail }: { detail: GroupDetail }) {
       <Header title="Duplicar grupo" />
       <Field label="Nome do novo grupo">
         <View style={{ flexDirection: 'row', gap: space.sm }}>
-          <EmojiTile emoji={emoji} size={56} onPress={() => setPicking(true)} label="Emoji do grupo" />
+          <EmojiTile emoji={emoji} size={45} onPress={() => setPicking(true)} label="Emoji do grupo" />
           <Input value={name} onChangeText={setName} maxLength={60} autoFocus selectTextOnFocus style={{ flex: 1 }} />
         </View>
       </Field>
       <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji do grupo" />
 
-      <Card style={{ gap: 6 }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Vai junto</Text>
-        <Text style={{ fontSize: 14, lineHeight: 20, color: colors.muted }}>
+      <Card style={{ gap: 5 }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text }}>Vai junto</Text>
+        <Text style={{ fontSize: 11, lineHeight: 16, color: colors.muted }}>
           {members.length} pessoas ({members.map((m) => m.display_name).join(', ')}), {categories.length} categorias
           e a divisão em vigor hoje. Quem já tem conta vê o grupo novo na hora; o código de convite é novo.
         </Text>
       </Card>
 
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }}>Copiar os lançamentos</Text>
-          <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>Copiar os lançamentos</Text>
+          <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
             Desligado: começa vazio, como um mês novo. Ligado: leva todos os lançamentos com a divisão original.
           </Text>
         </View>

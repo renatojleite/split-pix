@@ -33,27 +33,27 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
     router.push({ pathname: '/g/[id]/regra', params: { id: group.id, ...(categoryId ? { categoryId } : {}) } });
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 48, gap: space.md, paddingTop: space.md }}>
-      <Card style={{ gap: 10 }} onPress={() => openRule()}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 38, gap: space.md, paddingTop: space.md }}>
+      <Card style={{ gap: 8 }} onPress={() => openRule()}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Padrão do grupo</Text>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Alterar</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>Padrão do grupo</Text>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: colors.primary }}>Alterar</Text>
         </View>
-        <SplitBar parts={members.map((m) => ({ color: m.color, bp: bp(defaultRule, m.id) }))} height={14} />
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 }}>
+        <SplitBar parts={members.map((m) => ({ color: m.color, bp: bp(defaultRule, m.id) }))} height={11} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 6 }}>
           {members.map((m) => (
-            <Text key={m.id} style={{ fontSize: 15, color: colors.text }}>
+            <Text key={m.id} style={{ fontSize: 12, color: colors.text }}>
               {m.display_name} <Text style={{ fontWeight: '700' }}>{formatPercent(bp(defaultRule, m.id))}%</Text>
             </Text>
           ))}
         </View>
         {defaultRule && defaultRule.effective_from > '1900-01-01' ? (
-          <Text style={{ fontSize: 13, color: colors.muted }}>Vigente desde {monthLabel(defaultRule.effective_from).toLowerCase()}</Text>
+          <Text style={{ fontSize: 11, color: colors.muted }}>Vigente desde {monthLabel(defaultRule.effective_from).toLowerCase()}</Text>
         ) : null}
       </Card>
 
       <SectionTitle>Por categoria</SectionTitle>
-      <Text style={{ fontSize: 13, color: colors.muted, marginTop: -4 }}>
+      <Text style={{ fontSize: 11, color: colors.muted, marginTop: -3 }}>
         Toque numa categoria para mudar nome, emoji, % ou excluir.
       </Text>
       <Card style={{ padding: 0 }}>
@@ -62,17 +62,17 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
           const rule = effectiveRule(rules, c.id, now);
           return (
             <Pressable key={c.id} onPress={() => openRule(c.id)} accessibilityRole="button"
-              style={{ paddingHorizontal: space.lg, paddingVertical: 12, gap: 6,
+              style={{ paddingHorizontal: space.lg, paddingVertical: 10, gap: 5,
                 borderBottomWidth: i === categories.length - 1 ? 0 : 1, borderColor: colors.divider }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <EmojiTile emoji={c.emoji} size={28} />
-                <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: colors.text }}>{c.name}</Text>
-                <Text style={{ fontSize: 15, color: own ? colors.text : colors.muted }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <EmojiTile emoji={c.emoji} size={22} />
+                <Text style={{ flex: 1, fontSize: 12, fontWeight: '600', color: colors.text }}>{c.name}</Text>
+                <Text style={{ fontSize: 12, color: own ? colors.text : colors.muted }}>
                   {own ? label(rule) : `padrão ${label(defaultRule)}`}
                 </Text>
               </View>
-              <View style={{ opacity: own ? 1 : 0.35, paddingLeft: 38 }}>
-                <SplitBar parts={members.map((m) => ({ color: m.color, bp: bp(rule, m.id) }))} height={6} />
+              <View style={{ opacity: own ? 1 : 0.35, paddingLeft: 30 }}>
+                <SplitBar parts={members.map((m) => ({ color: m.color, bp: bp(rule, m.id) }))} height={5} />
               </View>
             </Pressable>
           );
@@ -80,7 +80,7 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
       </Card>
       {newCategory === null ? (
         <Pressable onPress={() => setNewCategory('')} hitSlop={8}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>+ Nova categoria</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>+ Nova categoria</Text>
         </Pressable>
       ) : (
         <InlineAdd value={newCategory} onChange={setNewCategory} placeholder="Nome da categoria" loading={addCategory.isPending}
@@ -90,32 +90,32 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
       )}
 
       <SectionTitle>Participantes</SectionTitle>
-      <Text style={{ fontSize: 13, color: colors.muted, marginTop: -4 }}>
+      <Text style={{ fontSize: 11, color: colors.muted, marginTop: -3 }}>
         Toque numa pessoa para mudar o nome, a chave Pix ou remover.
       </Text>
       <Card style={{ padding: 0 }}>
         {members.map((m, i) => (
           <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Editar ${m.display_name}`}
             onPress={() => router.push({ pathname: '/g/[id]/participante', params: { id: group.id, memberId: m.id } })}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: space.lg, height: 60,
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: space.lg, height: 48,
               borderBottomWidth: i === members.length - 1 ? 0 : 1, borderColor: colors.divider, opacity: pressed ? 0.6 : 1 })}>
-            <Avatar name={m.display_name} color={m.color} size={36} />
-            <Text style={{ flex: 1, fontSize: 16, color: colors.text }}>{m.display_name}</Text>
-            <Text style={{ fontSize: 13, color: colors.muted }}>
+            <Avatar name={m.display_name} color={m.color} size={29} />
+            <Text style={{ flex: 1, fontSize: 13, color: colors.text }}>{m.display_name}</Text>
+            <Text style={{ fontSize: 11, color: colors.muted }}>
               {m.user_id === userId ? 'você' : m.user_id ? (m.role === 'owner' ? 'criou o grupo' : 'no app') : 'ainda sem conta'}
             </Text>
-            <Icon name="chevron-right" size={18} color={colors.muted} />
+            <Icon name="chevron-right" size={14} color={colors.muted} />
           </Pressable>
         ))}
       </Card>
       {detail.allMembers.some((m) => m.left_at) ? (
-        <Text style={{ fontSize: 13, color: colors.muted }}>
+        <Text style={{ fontSize: 11, color: colors.muted }}>
           Saíram do grupo: {detail.allMembers.filter((m) => m.left_at).map((m) => m.display_name).join(', ')} (continuam no histórico).
         </Text>
       ) : null}
       {newMember === null ? (
         <Pressable onPress={() => setNewMember('')} hitSlop={8}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>+ Adicionar participante</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>+ Adicionar participante</Text>
         </Pressable>
       ) : (
         <InlineAdd value={newMember} onChange={setNewMember} placeholder="Nome" loading={addMember.isPending}
@@ -124,14 +124,14 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
           onCancel={() => setNewMember(null)} />
       )}
 
-      <Card style={{ backgroundColor: colors.primarySoft, flexDirection: 'row', alignItems: 'center', gap: 14 }}
+      <Card style={{ backgroundColor: colors.primarySoft, flexDirection: 'row', alignItems: 'center', gap: 11 }}
         onPress={() => router.push({ pathname: '/g/[id]/convite', params: { id: group.id } })}>
-        <Icon name="qr" size={32} color={colors.primaryInk} />
+        <Icon name="qr" size={26} color={colors.primaryInk} />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 13, color: colors.primaryInk }}>Código de convite</Text>
-          <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: 3, color: colors.text }}>{group.invite_code}</Text>
+          <Text style={{ fontSize: 11, color: colors.primaryInk }}>Código de convite</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', letterSpacing: 2.4, color: colors.text }}>{group.invite_code}</Text>
         </View>
-        <Icon name="chevron-right" size={20} color={colors.primaryInk} />
+        <Icon name="chevron-right" size={16} color={colors.primaryInk} />
       </Card>
 
       <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setNewEmoji} title="Emoji da categoria" />
@@ -150,15 +150,15 @@ function InlineAdd({ value, onChange, onSave, onCancel, placeholder, loading, hi
   placeholder: string; loading: boolean; hint?: string; emoji?: string; onEmoji?: () => void;
 }) {
   return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        {emoji && onEmoji ? <EmojiTile emoji={emoji} size={56} onPress={onEmoji} /> : null}
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        {emoji && onEmoji ? <EmojiTile emoji={emoji} size={45} onPress={onEmoji} /> : null}
         <Input value={value} onChangeText={onChange} placeholder={placeholder} autoFocus maxLength={40} style={{ flex: 1 }} />
       </View>
-      {hint ? <Text style={{ fontSize: 13, color: colors.muted }}>{hint}</Text> : null}
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 48 }} onPress={onCancel} />
-        <Button title="Adicionar" style={{ flex: 1, height: 48 }} onPress={onSave} disabled={!value.trim()} loading={loading} />
+      {hint ? <Text style={{ fontSize: 11, color: colors.muted }}>{hint}</Text> : null}
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 38 }} onPress={onCancel} />
+        <Button title="Adicionar" style={{ flex: 1, height: 38 }} onPress={onSave} disabled={!value.trim()} loading={loading} />
       </View>
     </View>
   );
