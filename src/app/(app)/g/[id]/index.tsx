@@ -81,7 +81,7 @@ export default function GroupScreen() {
           onPress: () => router.push({ pathname: '/g/[id]/editar', params: { id } }) },
         { emoji: '💸', label: 'Criar pagamento Pix', hint: 'Cobrar ou pagar com QR/código, qualquer valor',
           onPress: () => router.push({ pathname: '/g/[id]/pix', params: { id } }) },
-        { emoji: '🧾', label: 'Ler comprovante', hint: 'Preenche o lançamento a partir do comprovante do banco',
+        { emoji: '✨', label: 'Ler comprovante com IA', hint: 'Print ou PDF do banco: a IA preenche o lançamento',
           onPress: () => router.push({ pathname: '/comprovante', params: { groupId: id } }) },
         { emoji: '📊', label: 'Compartilhar relatório', hint: 'Resumido ou extrato completo, pelo WhatsApp',
           onPress: () => router.push({ pathname: '/g/[id]/relatorio', params: { id } }) },

@@ -1,52 +1,130 @@
 import * as Clipboard from 'expo-clipboard';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { useShareIntentContext } from 'expo-share-intent';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 
+import { AI_MIN_MS, AiAnalysis } from '@/components/ai-analysis';
 import { Button, Card, Chip, Header, Input, Loading, Screen } from '@/components/ui';
 import { useGroup, useGroups, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { formatBRL } from '@/lib/money';
+import { ocrSupported, readFile, readImage } from '@/lib/ocr';
 import { matchMember, parseReceipt, redactReceipt, type ReceiptFields } from '@/lib/receipt';
-import { colors, space } from '@/theme';
+import { colors, radius, space } from '@/theme';
 
-// O texto colado vive só nesta tela (memória). Nada é salvo: o que segue para o
-// lançamento são os campos que a pessoa confere no formulário.
+// O texto lido (da imagem, PDF, compartilhamento ou colado) vive só nesta tela, em memória.
+// Nada é salvo: o que segue para o lançamento são os campos que a pessoa confere no formulário.
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function ComprovanteScreen() {
-  const { groupId } = useLocalSearchParams<{ groupId?: string }>();
+  const { groupId, shared } = useLocalSearchParams<{ groupId?: string; shared?: string }>();
   const groups = useGroups(useUserId());
+  const share = useShareIntentContext();
   const [text, setText] = useState('');
   const [picked, setPicked] = useState<string | null>(groupId ?? null);
   const [copiedSupport, setCopiedSupport] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showPaste, setShowPaste] = useState(!ocrSupported);
+  const handledShare = useRef(false);
 
   const active = (groups.data ?? []).filter((g) => !g.archived_at);
   const selected = picked ?? active[0]?.id ?? null;
-  const r = text.trim() ? parseReceipt(text) : null;
+  const r = text.trim() && !analyzing ? parseReceipt(text) : null;
   const found = !!r && (r.amountCents !== null || r.date !== null || r.toName !== null);
+
+  /** Mostra a tela de análise enquanto lê; no fim o texto fica só em memória. */
+  async function analyze(read: () => Promise<string>) {
+    setError(null);
+    setDone(false);
+    setAnalyzing(true);
+    try {
+      const [t] = await Promise.all([read(), wait(AI_MIN_MS)]);
+      if (!t.trim()) throw new Error('Não encontrei texto nesse arquivo.');
+      setText(t);
+      setDone(true);
+      await wait(900);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não consegui ler esse comprovante.');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  // Veio pelo "Compartilhar" do app do banco.
+  useEffect(() => {
+    if (!shared || handledShare.current || !share.hasShareIntent) return;
+    handledShare.current = true;
+    const file = share.shareIntent.files?.[0];
+    const sharedText = share.shareIntent.text ?? '';
+    void analyze(file ? () => readFile(file.path, file.mimeType) : async () => sharedText);
+    share.resetShareIntent();
+  }, [shared, share]);
+
+  async function pickImage() {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+    const asset = res.canceled ? null : res.assets[0];
+    if (asset) await analyze(() => readImage(asset.uri));
+  }
+
+  async function pickFile() {
+    const res = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/*'], copyToCacheDirectory: true });
+    const asset = res.canceled ? null : res.assets[0];
+    if (asset) await analyze(() => readFile(asset.uri, asset.mimeType));
+  }
 
   async function paste() {
     const t = await Clipboard.getStringAsync();
-    if (t.trim()) setText(t);
+    if (t.trim()) await analyze(async () => t);
   }
 
   return (
     <Screen>
       <Header title="Ler comprovante" />
+      <AiAnalysis visible={analyzing} done={done} />
 
-      <Card style={{ gap: space.sm }}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>1. Copie o texto do comprovante</Text>
-        <Tip>📸 Print ou imagem: abra na Galeria e toque no ícone <Text style={{ fontWeight: '700' }}>T</Text> (extrair texto) › Copiar. Ou use o Google Lens › Texto › Copiar tudo.</Tip>
-        <Tip>📄 PDF: abra, selecione tudo e copie.</Tip>
-        <Tip>🔒 Lido só aqui no celular. O texto não é salvo nem enviado.</Tip>
-      </Card>
-
-      <View style={{ gap: space.sm }}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>2. Cole aqui</Text>
-        <Button title={text ? 'Colar de novo' : 'Colar do comprovante'} icon="copy" variant={text ? 'secondary' : 'primary'} onPress={paste} />
-        <Input value={text} onChangeText={setText} multiline placeholder="…ou cole o texto manualmente"
-          style={{ minHeight: 70, maxHeight: 140, textAlignVertical: 'top', paddingTop: 10, fontSize: 12 }} />
+      <View style={{ backgroundColor: colors.primaryInk, borderRadius: radius.card, padding: space.xl, gap: space.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 22 }}>✨</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#93C5FD' }}>LEITURA INTELIGENTE COM IA</Text>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Do comprovante ao lançamento</Text>
+          </View>
+        </View>
+        <Text style={{ fontSize: 13, lineHeight: 19, color: 'rgba(255,255,255,0.85)' }}>
+          Envie o print ou o PDF do banco. A IA lê no seu celular e já preenche valor, data e destinatário. Você só confere e salva.
+        </Text>
+        {ocrSupported ? (
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <SourceTile emoji="🖼️" label="Print ou foto" onPress={pickImage} />
+            <SourceTile emoji="📄" label="PDF ou arquivo" onPress={pickFile} />
+          </View>
+        ) : null}
+        <Text style={{ fontSize: 11, lineHeight: 16, color: 'rgba(255,255,255,0.7)' }}>
+          💡 Mais rápido: no app do banco, toque em <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Compartilhar comprovante</Text> e escolha o split-pix.
+        </Text>
+        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>🔒 Nada sai do aparelho. CPF, chave Pix e códigos são descartados.</Text>
       </View>
+
+      {error ? <Text style={{ fontSize: 13, lineHeight: 18, color: colors.negative }}>{error}</Text> : null}
+
+      {showPaste ? (
+        <View style={{ gap: space.sm }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>Ou cole o texto do comprovante</Text>
+          <Button title="Colar do comprovante" icon="copy" variant="secondary" onPress={paste} />
+          <Input value={text} onChangeText={setText} multiline placeholder="…ou digite/cole aqui"
+            style={{ minHeight: 70, maxHeight: 140, textAlignVertical: 'top', paddingTop: 10, fontSize: 12 }} />
+        </View>
+      ) : (
+        <Pressable onPress={() => setShowPaste(true)} hitSlop={8}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>Prefere colar o texto?</Text>
+        </Pressable>
+      )}
 
       {r && !found ? (
         <Text style={{ fontSize: 13, lineHeight: 18, color: colors.negative }}>
@@ -57,7 +135,7 @@ export default function ComprovanteScreen() {
       {r && found ? (
         <>
           <Card style={{ gap: 8 }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>3. Encontrei</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>✨ A IA encontrou</Text>
             <Field label="Valor" value={r.amountCents !== null ? formatBRL(r.amountCents) : null} low={r.amountConfidence === 'low'} />
             <Field label="Data" value={r.date ? r.date.split('-').reverse().join('/') : null} low={r.dateConfidence === 'low'} />
             <Field label="Para" value={r.toName} />
@@ -66,7 +144,7 @@ export default function ComprovanteScreen() {
           </Card>
 
           <View style={{ gap: space.sm }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>4. Em qual grupo?</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>Em qual grupo lançar?</Text>
             {groups.isLoading ? <Loading /> : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {active.map((g) => <Chip key={g.id} label={`${g.emoji} ${g.name}`} selected={selected === g.id} onPress={() => setPicked(g.id)} />)}
@@ -131,6 +209,14 @@ function Field({ label, value, low }: { label: string; value: string | null; low
   );
 }
 
-function Tip({ children }: { children: React.ReactNode }) {
-  return <Text style={{ fontSize: 12, lineHeight: 17, color: colors.textSoft }}>{children}</Text>;
+
+function SourceTile({ emoji, label, onPress }: { emoji: string; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
+      style={({ pressed }) => ({ flex: 1, backgroundColor: pressed ? '#1D4ED8' : colors.primary, borderRadius: radius.input,
+        paddingVertical: space.lg, alignItems: 'center', gap: 6 })}>
+      <Text style={{ fontSize: 26 }}>{emoji}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>{label}</Text>
+    </Pressable>
+  );
 }

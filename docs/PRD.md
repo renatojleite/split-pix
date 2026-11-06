@@ -102,7 +102,15 @@ O split-pix **não movimenta dinheiro**. Ele calcula quem deve a quem e facilita
   - rodapé com link do app e código do grupo.
 - Na tela: **Copiar código** e **Enviar só o código** para cada pendência, porque no WhatsApp segurar a mensagem copia ela inteira.
 
-### 3.7 Atualizações e distribuição
+### 3.7 Ler comprovante com IA
+- Entrada: print ou foto, PDF, "Compartilhar comprovante" do app do banco direto para o split-pix, ou colar o texto.
+- Leitura **no aparelho** (ML Kit / Apple Vision) + leitor de campos próprio (`src/lib/receipt.ts`): valor, data, destinatário, pagador e título sugerido ("Pix para Maria Lima").
+- Tela de análise ("Leitura inteligente") com os passos, depois a confirmação: o que foi encontrado, com ⚠️ nos campos duvidosos, e a escolha do grupo.
+- Se o destinatário é participante do grupo, sugere **acerto**; se não, **despesa**. Abre o formulário do item pré-preenchido.
+- **Nunca salva dados sensíveis**: CPF, chave Pix, instituição, autenticação e ID não saem do leitor; imagem e páginas do PDF são apagadas após a leitura; o texto fica só em memória.
+- "Leu errado? Copiar texto para melhorar o leitor" copia uma versão sem dados pessoais.
+
+### 3.8 Atualizações e distribuição
 - O APK é gerado no GitHub Actions; a release `latest` fica com `split-pix.apk`.
 - **EAS Update:** mudança só de código JS vira atualização em cerca de 2 minutos, sem APK novo. O que é decidido pelo fingerprint nativo:
   - fingerprint igual: só a atualização;

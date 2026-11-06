@@ -191,7 +191,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         {params.fromReceipt && !isEditing ? (
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: radius.input, padding: space.md }}>
             <Text style={{ fontSize: 12, lineHeight: 17, color: colors.primaryInk }}>
-              🧾 Preenchido pelo comprovante. Confira valor, data e título, escolha a categoria e salve.
+              ✨ Preenchido pela leitura inteligente. Confira valor, data e título, escolha a categoria e salve.
             </Text>
           </View>
         ) : null}

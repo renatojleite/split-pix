@@ -46,7 +46,31 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 160
         }
-      ]
+      ],
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": [
+            "image/*",
+            "application/pdf",
+            "text/*"
+          ],
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsText": true,
+            "NSExtensionActivationSupportsImageWithMaxCount": 1,
+            "NSExtensionActivationSupportsFileWithMaxCount": 1
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O split-pix lê o comprovante escolhido para preencher o lançamento. A imagem não é salva.",
+          "microphonePermission": false,
+          "cameraPermission": "O split-pix usa a câmera para ler o QR code de convite de um grupo."
+        }
+      ],
+      "./plugins/with-mlkit-ocr"
     ],
     "experiments": {
       "typedRoutes": true,
