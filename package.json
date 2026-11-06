@@ -49,7 +49,7 @@
     "ios": "expo start --ios",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/split.test.ts",
+    "test": "node --test tests/split.test.ts tests/receipt.test.ts",
     "test:sql": "node supabase/tests/schema.test.mjs",
     "build:apk": "npx eas-cli@latest build -p android --profile preview"
   },
