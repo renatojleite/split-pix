@@ -15,11 +15,13 @@ import { dayMonth, seriesDates, today } from '@/lib/dates';
 import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/money';
 import { effectiveRule, previewSplit } from '@/lib/split';
 import type { Category, Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
-import { colors, defaultEmoji, space, type } from '@/theme';
+import { colors, defaultEmoji, radius, space, type } from '@/theme';
 
 type Params = {
   id: string; entryId?: string; duplicateOf?: string;
   type?: EntryType; from?: string; to?: string; amount?: string;
+  // Vindos do leitor de comprovante (o formulário só pré-preenche; a pessoa confere).
+  title?: string; date?: string; fromReceipt?: string;
 };
 
 export default function ItemScreen() {
@@ -54,12 +56,12 @@ function initialState(detail: GroupDetail, entry: Entry | null, params: Params, 
   const other = members.find((m) => m.id !== meId);
   return {
     kind: params.type ?? ('expense' as EntryType),
-    title: params.type === 'transfer' ? 'Acerto' : '',
+    title: params.title ?? (params.type === 'transfer' ? 'Acerto' : ''),
     amount: params.amount ? Number(params.amount) : 0,
     emoji: null as string | null,
     paidBy: params.from ?? meId ?? members[0]?.id ?? '',
     transferTo: params.to ?? other?.id ?? '',
-    date: today(),
+    date: params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : today(),
     categoryId: null as string | null,
     mode: 'default' as SplitMode,
     participants: all,
@@ -186,6 +188,13 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
               <IconButton name="trash" label="Excluir" color={colors.negative} onPress={confirmDelete} />
             </View>
           ) : undefined} />
+        {params.fromReceipt && !isEditing ? (
+          <View style={{ backgroundColor: colors.primarySoft, borderRadius: radius.input, padding: space.md }}>
+            <Text style={{ fontSize: 12, lineHeight: 17, color: colors.primaryInk }}>
+              🧾 Preenchido pelo comprovante. Confira valor, data e título, escolha a categoria e salve.
+            </Text>
+          </View>
+        ) : null}
         {isEditing && entry?.recurrence_total ? (
           <Text style={{ fontSize: 11, color: colors.muted }}>
             🔁 Ocorrência {entry.recurrence_index} de {entry.recurrence_total}. Alterações valem só para esta.

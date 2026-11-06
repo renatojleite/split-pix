@@ -136,6 +136,8 @@ export default function Home() {
       </Text>
 
       <ActionSheet visible={menuOpen} onClose={() => setMenuOpen(false)} actions={[
+        { emoji: '🧾', label: 'Ler comprovante', hint: 'Cola o texto do comprovante e já preenche o lançamento',
+          onPress: () => router.push('/comprovante') },
         { emoji: '🔄', label: 'Atualizar versão', hint: 'Procura agora e já abre a versão nova', onPress: checkUpdate },
         { emoji: '👤', label: 'Perfil', hint: 'Seu nome e sair da conta', onPress: () => router.push('/perfil') },
       ]} />
