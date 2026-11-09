@@ -1,22 +1,24 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActionSheet } from '@/components/action-sheet';
 import { Icon, Logo } from '@/components/icons';
+import { MoreButton, PopoverMenu, type Anchor, type MenuItem } from '@/components/popover-menu';
 import { SortableList } from '@/components/sortable-list';
 import { UpdateBanner } from '@/components/update-banner';
 import { Button, Card, EmojiTile, ErrorText, IconButton, Input, Loading } from '@/components/ui';
 import { useGroups, useProfile, useUpdateProfileName, type GroupSummary } from '@/lib/api';
 import { checkForUpdateNow, versionLabel } from '@/lib/app-version';
 import { useUserId } from '@/lib/auth';
+import { activityLabel } from '@/lib/dates';
 import { describeMyBalance } from '@/lib/describe';
 import { PREF, usePref } from '@/lib/prefs';
 import { colors, space, type } from '@/theme';
 
-const ROW = 77; // altura fixa do cartão de grupo (a lista arrastável precisa)
+const ROW = 92; // altura fixa do cartão de grupo (a lista arrastável precisa)
 
 /** Ordem salva primeiro; grupos novos (fora da ordem) vão para o topo, mais recentes antes. */
 function applyOrder(groups: GroupSummary[], order: string[]): GroupSummary[] {
@@ -35,6 +37,19 @@ export default function Home() {
   const [dragging, setDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [checking, setChecking] = useState(false);
+  // Menu rápido do grupo (⋮ ou toque longo), igual ao dos lançamentos.
+  const [groupMenu, setGroupMenu] = useState<{ group: GroupSummary; anchor: Anchor } | null>(null);
+  function groupMenuItems(g: GroupSummary): MenuItem[] {
+    const go = (pathname: '/g/[id]' | '/g/[id]/editar' | '/g/[id]/relatorio' | '/g/[id]/convite' | '/g/[id]/duplicar' | '/g/[id]/novo') =>
+      router.push({ pathname, params: { id: g.id } });
+    return [
+      { emoji: '➕', label: 'Novo lançamento', onPress: () => go('/g/[id]/novo') },
+      { emoji: '📊', label: 'Relatório', onPress: () => go('/g/[id]/relatorio') },
+      { emoji: '👥', label: 'Convidar', onPress: () => go('/g/[id]/convite') },
+      { emoji: '📋', label: 'Duplicar grupo', onPress: () => go('/g/[id]/duplicar') },
+      { emoji: '✏️', label: 'Editar grupo', onPress: () => go('/g/[id]/editar') },
+    ];
+  }
 
   const all = applyOrder(groups.data ?? [], order);
   const list = all.filter((g) => (showArchived ? g.archived_at : !g.archived_at));
@@ -89,9 +104,19 @@ export default function Home() {
             const status = describeMyBalance(g.myBalance, g.me, g.members);
             return (
               <Card onPress={() => router.push({ pathname: '/g/[id]', params: { id: g.id } })}
-                onLongPress={() => groupActions(g.id, g.name)}
+                onLongPress={(ev) => setGroupMenu({ group: g, anchor: { x: ev.nativeEvent.pageX - 180, y: ev.nativeEvent.pageY, width: 180, height: 0 } })}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: ROW, paddingVertical: 0, paddingRight: 3, borderRadius: 21 }}>
-                <EmojiTile emoji={g.emoji} />
+                <View>
+                  <EmojiTile emoji={g.emoji} />
+                  {g.unseen > 0 ? (
+                    // Novidades que outras pessoas incluíram desde a minha última visita.
+                    <View accessibilityLabel={`${g.unseen} ${g.unseen === 1 ? 'lançamento novo' : 'lançamentos novos'}`}
+                      style={{ position: 'absolute', top: -5, right: -6, minWidth: 21, height: 21, borderRadius: 11, paddingHorizontal: 5,
+                        alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.card }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF' }}>{g.unseen > 99 ? '99+' : g.unseen}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <View style={{ flex: 1, gap: 3 }}>
                   <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }} numberOfLines={1}>{g.name}</Text>
                   <Text numberOfLines={1} style={{
@@ -99,9 +124,15 @@ export default function Home() {
                     fontWeight: status.tone === 'neutral' ? '400' : '600',
                     color: status.tone === 'positive' ? colors.positive : status.tone === 'negative' ? colors.negative : colors.muted,
                   }}>{status.text}</Text>
+                  {g.lastActivity ? (
+                    <Text numberOfLines={1} style={{ fontSize: 11, color: colors.muted }}>
+                      Atualizado {activityLabel(g.lastActivity)}{g.unseen ? ` · ${g.unseen} ${g.unseen === 1 ? 'novo' : 'novos'}` : ''}
+                    </Text>
+                  ) : null}
                 </View>
+                <MoreButton label={`Ações de ${g.name}`} onOpen={(anchor) => setGroupMenu({ group: g, anchor })} />
                 {handle(
-                  <View accessibilityLabel={`Arrastar ${g.name}`} style={{ width: 42, height: ROW, alignItems: 'center', justifyContent: 'center' }}>
+                  <View accessibilityLabel={`Arrastar ${g.name}`} style={{ width: 36, height: ROW, alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="grip" size={20} color={colors.muted} />
                   </View>,
                 )}
@@ -135,6 +166,8 @@ export default function Home() {
         split·pix {versionLabel()}
       </Text>
 
+      <PopoverMenu anchor={groupMenu?.anchor ?? null} items={groupMenu ? groupMenuItems(groupMenu.group) : []}
+        onClose={() => setGroupMenu(null)} />
       <ActionSheet visible={menuOpen} onClose={() => setMenuOpen(false)} actions={[
         { emoji: '✨', label: 'Ler comprovante com IA', hint: 'Print, PDF ou compartilhado do banco: já preenche o lançamento',
           onPress: () => router.push('/comprovante') },
@@ -146,22 +179,6 @@ export default function Home() {
 }
 
 /** Toque longo num grupo: atalhos. */
-function groupActions(id: string, name: string) {
-  const open = (path: '/g/[id]/duplicar' | '/g/[id]/convite') => router.push({ pathname: path, params: { id } });
-  if (Platform.OS === 'ios') {
-    ActionSheetIOS.showActionSheetWithOptions(
-      { title: name, options: ['Duplicar grupo', 'Convidar', 'Cancelar'], cancelButtonIndex: 2 },
-      (i) => (i === 0 ? open('/g/[id]/duplicar') : i === 1 ? open('/g/[id]/convite') : undefined),
-    );
-  } else {
-    Alert.alert(name, undefined, [
-      { text: 'Duplicar grupo', onPress: () => open('/g/[id]/duplicar') },
-      { text: 'Convidar', onPress: () => open('/g/[id]/convite') },
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
-  }
-}
-
 function AskName({ userId }: { userId: string }) {
   const [name, setName] = useState('');
   const save = useUpdateProfileName(userId);

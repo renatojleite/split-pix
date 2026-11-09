@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { addMonths, monthGrid, monthStart, seriesDates } from '../src/lib/dates.ts';
+import { activityLabel, addMonths, monthGrid, monthStart, seriesDates } from '../src/lib/dates.ts';
 import { centsFromInput, formatBRL, formatPercent } from '../src/lib/money.ts';
 import { allocateCents, effectiveRule, previewSplit, settleUp } from '../src/lib/split.ts';
 import { shownPeople, summarize } from '../src/lib/summary.ts';
@@ -232,4 +232,11 @@ test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por
   const noKey = buildReport({ ...base, kind: 'summary', members: [{ ...renato, ...NO_PIX }, paula] });
   assert.ok(noKey.includes('💰 Valor: *R$ 300,00*') && !noKey.includes('Pix copia e cola'));
   assert.ok(noKey.includes('• *Renato*: (ausente)'));
+});
+
+test('data da última atividade: hoje, ontem ou data completa', () => {
+  const now = new Date(2026, 10, 9, 18, 0);
+  assert.equal(activityLabel(new Date(2026, 10, 9, 17, 35).toISOString(), now), 'hoje - 17h35');
+  assert.equal(activityLabel(new Date(2026, 10, 8, 9, 5).toISOString(), now), 'ontem - 9h05');
+  assert.equal(activityLabel(new Date(2026, 9, 20, 17, 35).toISOString(), now), '20/10/2026 - 17h35');
 });

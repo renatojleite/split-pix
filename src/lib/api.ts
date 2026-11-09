@@ -52,7 +52,13 @@ export function useUpdateProfileName(userId: string) {
 
 // ───────────── Grupos ─────────────
 
-export type GroupSummary = Group & { members: Member[]; me: Member | null; myBalance: number };
+export type GroupSummary = Group & {
+  members: Member[]; me: Member | null; myBalance: number;
+  /** Última atividade (lançamento criado, editado ou excluído). */
+  lastActivity: string | null;
+  /** Lançamentos que outras pessoas incluíram desde a última vez que abri o grupo. */
+  unseen: number;
+};
 
 export function useGroups(userId: string) {
   return useQuery({
@@ -62,16 +68,22 @@ export function useGroups(userId: string) {
         await supabase.from('groups').select('*, members:group_members(*)').order('created_at', { ascending: false }),
       ) as (Group & { members: Member[] })[];
       if (groups.length === 0) return [];
-      const balances = must(
-        await supabase.from('member_balances').select('member_id, balance_cents').in('group_id', groups.map((g) => g.id)),
-      ) as { member_id: string; balance_cents: number }[];
+      const [balRes, actRes] = await Promise.all([
+        supabase.from('member_balances').select('member_id, balance_cents').in('group_id', groups.map((g) => g.id)),
+        supabase.rpc('my_groups_activity'),
+      ]);
+      const balances = must(balRes) as { member_id: string; balance_cents: number }[];
+      // Atividade é extra: se falhar (ex.: banco antigo), a Home continua funcionando.
+      const activity = new Map(((actRes.data ?? []) as { group_id: string; last_activity: string | null; unseen: number }[])
+        .map((a) => [a.group_id, a]));
       return groups.map((g) => {
         const me = g.members.find((m) => m.user_id === userId) ?? null;
         const myBalance = me
           ? balances.filter((b) => b.member_id === me.id).reduce((a, b) => a + Number(b.balance_cents), 0)
           : 0;
         const active = g.members.filter((m) => !m.left_at).sort((a, b) => a.position - b.position);
-        return { ...g, members: active, me, myBalance };
+        const act = activity.get(g.id);
+        return { ...g, members: active, me, myBalance, lastActivity: act?.last_activity ?? null, unseen: act?.unseen ?? 0 };
       });
     },
   });
@@ -326,7 +338,7 @@ export function useClearCategoryRule(groupId: string) {
 // ───────────── Lançamentos ─────────────
 
 const ENTRY_COLUMNS =
-  'id, group_id, type, title, emoji, amount_cents, paid_by, transfer_to, category_id, occurred_on, split_mode, recurrence_id, recurrence_index, recurrence_total, updated_by, updated_at, shares:entry_shares(member_id, share_cents, basis_points)';
+  'id, group_id, type, title, emoji, amount_cents, paid_by, transfer_to, category_id, occurred_on, split_mode, recurrence_id, recurrence_index, recurrence_total, updated_by, updated_at, created_by, created_at, shares:entry_shares(member_id, share_cents, basis_points)';
 
 export function useEntries(groupId: string, month: string) {
   return useQuery({
@@ -428,6 +440,15 @@ export function useDeleteEntry(groupId: string) {
       qc.invalidateQueries({ queryKey: keys.group(groupId) });
       qc.invalidateQueries({ queryKey: keys.groups });
     },
+  });
+}
+
+/** Marca o grupo como visto e devolve quando tinha sido visto antes (para destacar o que é novo). */
+export function useMarkGroupSeen() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (groupId: string) => (await supabase.rpc('mark_group_seen', { p_group_id: groupId })).data as string | null,
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.groups }),
   });
 }
 

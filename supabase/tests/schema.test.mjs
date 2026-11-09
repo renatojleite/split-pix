@@ -255,6 +255,22 @@ ok(moved[1].payer === 'Paula', 'placeholder do mesmo nome vira o pagador no dest
 ok(!!(await fails(B, `select duplicate_entries($1::uuid[], $2)`, [[b1], g5])), 'não duplica para grupo de que não participa');
 ok(!!(await fails(A, `select entry_split_args($1)`, [b1])), 'funções internas fechadas');
 
+// Novidades por grupo (contador da Home e destaque)
+await as(B, `select mark_group_seen($1)`, [g]);
+await as(A, `select mark_group_seen($1)`, [g]);
+const act = async (uid) => (await as(uid, `select * from my_groups_activity() where group_id=$1`, [g]))[0];
+ok((await act(B)).unseen === 0, 'em dia logo após abrir');
+await save({ title: 'Novidade 1', amount: 1000, paidBy: R, on: '2026-11-09' });
+await save({ title: 'Novidade 2', amount: 2000, paidBy: R, on: '2026-11-09' });
+ok((await act(B)).unseen === 2, 'conta o que outra pessoa incluiu');
+ok((await act(A)).unseen === 0, 'o que eu mesmo incluí não conta');
+ok(!!(await act(B)).last_activity, 'data da última atividade');
+const [{ seenBefore }] = await as(B, `select mark_group_seen($1) "seenBefore"`, [g]);
+ok(!!seenBefore, 'devolve quando tinha visto antes (para destacar)');
+ok((await act(B)).unseen === 0, 'abrir o grupo zera as novidades');
+ok(!(await as(D, `select * from my_groups_activity() where group_id=$1`, [g])).length, 'quem é de fora não vê');
+ok(!!(await fails(D, `select mark_group_seen($1)`, [g])), 'quem é de fora não marca');
+
 // Comentários nos lançamentos
 const [{ ce }] = await as(A, `select save_entry(p_group_id => $1, p_type => 'expense', p_title => 'Feira', p_amount_cents => 5000, p_paid_by => $2, p_occurred_on => '2026-11-09') ce`, [g, R]);
 const [{ c1 }] = await as(A, `select add_entry_comment($1, '  Inclui as frutas da semana  ') c1`, [ce]);

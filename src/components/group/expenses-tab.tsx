@@ -18,8 +18,10 @@ import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
 import { MonthTotals, PeopleBlock } from './people-block';
 
-export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
+export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   detail: GroupDetail; month: string; onMonth: (m: string) => void;
+  /** Quando eu tinha visto o grupo antes desta visita: o que outros incluíram depois fica em destaque. */
+  newSince?: string | null;
   /** Avisa a tela do grupo para esconder o botão Adicionar durante a seleção. */
   onSelecting?: (on: boolean) => void;
 }) {
@@ -126,6 +128,8 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
   }
 
   const withComments = visible.filter((e) => commentsOf(e.id).length > 0).length;
+  const isNew = (e: Entry) => !!newSince && !!e.created_at && e.created_at > newSince && !!e.created_by && e.created_by !== userId;
+  const newCount = list.filter(isNew).length;
 
   return (
     <>
@@ -149,6 +153,15 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
               <Pressable onPress={() => setPickedDay(null)} hitSlop={10} accessibilityRole="button">
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
               </Pressable>
+            </View>
+          ) : null}
+          {newCount > 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 12,
+              backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primary }}>
+              <Text style={{ fontSize: 14 }}>✨</Text>
+              <Text style={{ flex: 1, fontSize: 12, color: colors.primaryInk }}>
+                <Text style={{ fontWeight: '700' }}>{newCount} {newCount === 1 ? 'lançamento novo' : 'lançamentos novos'}</Text> de outras pessoas desde a sua última visita
+              </Text>
             </View>
           ) : null}
           <View style={{ width: '30%', alignSelf: 'center', height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
@@ -185,6 +198,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
           onLongPress={(ev) => (selected ? toggle(e.id)
             : setMenu({ entry: e, anchor: { x: ev.nativeEvent.pageX - 180, y: ev.nativeEvent.pageY, width: 180, height: 0 } }))}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12,
+            ...(isNew(e) ? { backgroundColor: '#EFF6FF', borderLeftWidth: 4, borderLeftColor: colors.primary } : {}),
             ...(selected?.has(e.id) ? { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primary } : {}) }}>
           {selected ? (
             <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center',
@@ -196,6 +210,11 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
           <View style={{ flex: 1, gap: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colors.text }} numberOfLines={1}>{e.title}</Text>
+              {isNew(e) ? (
+                <View style={{ backgroundColor: colors.primary, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>
+                  <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 0.5, color: '#FFFFFF' }}>NOVO</Text>
+                </View>
+              ) : null}
               {notes.length ? <CommentBadge count={notes.length} onPress={() => setCommentFor(e)} /> : null}
             </View>
             <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>

@@ -62,6 +62,8 @@ export type Entry = {
   recurrence_total: number | null;
   updated_by: string | null;
   updated_at: string;
+  created_by?: string | null; // conta que incluiu (destaque de novidades)
+  created_at?: string;
   shares: EntryShare[];
 };
 

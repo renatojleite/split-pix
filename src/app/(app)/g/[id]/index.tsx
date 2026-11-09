@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,7 +10,7 @@ import { ExpensesTab } from '@/components/group/expenses-tab';
 import { SplitTab } from '@/components/group/split-tab';
 import { SummaryTab } from '@/components/group/summary-tab';
 import { Button, EmojiTile, Header, IconButton, Loading, Segmented } from '@/components/ui';
-import { useGroup, useGroupRealtime } from '@/lib/api';
+import { useGroup, useGroupRealtime, useMarkGroupSeen } from '@/lib/api';
 import { monthStart, today } from '@/lib/dates';
 import { colors, space } from '@/theme';
 
@@ -25,6 +25,14 @@ export default function GroupScreen() {
   const [month, setMonth] = useState(monthStart(today()));
   const [menuOpen, setMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
+  // Ao abrir: marca o grupo como visto e guarda quando tinha sido visto antes;
+  // o que outras pessoas incluíram depois disso aparece em destaque nesta visita.
+  const markSeen = useMarkGroupSeen();
+  const [newSince, setNewSince] = useState<string | null>(null);
+  useEffect(() => {
+    markSeen.mutate(id, { onSuccess: (prev) => setNewSince(prev ?? null) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (!group.data) {
     return (
@@ -63,7 +71,7 @@ export default function GroupScreen() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {tab === 'despesas' ? <ExpensesTab detail={group.data} month={month} onMonth={setMonth} onSelecting={setSelecting} /> : null}
+        {tab === 'despesas' ? <ExpensesTab detail={group.data} month={month} onMonth={setMonth} onSelecting={setSelecting} newSince={newSince} /> : null}
         {tab === 'saldos' ? <BalancesTab detail={group.data} month={month} onMonth={setMonth} /> : null}
         {tab === 'resumo' ? <SummaryTab detail={group.data} month={month} onMonth={setMonth} /> : null}
         {tab === 'divisao' ? <SplitTab detail={group.data} /> : null}

@@ -80,3 +80,15 @@ export function monthGrid(month: string): (string | null)[][] {
   while (cells.length % 7) cells.push(null);
   return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
 }
+
+/** "hoje - 17h35", "ontem - 9h10", "20/10/2026 - 17h35" (horário local). */
+export function activityLabel(iso: string, now: Date = new Date()): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const time = `${d.getHours()}h${pad(d.getMinutes())}`;
+  const dayKey = (x: Date) => `${x.getFullYear()}-${x.getMonth()}-${x.getDate()}`;
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if (dayKey(d) === dayKey(now)) return `hoje - ${time}`;
+  if (dayKey(d) === dayKey(yesterday)) return `ontem - ${time}`;
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} - ${time}`;
+}
