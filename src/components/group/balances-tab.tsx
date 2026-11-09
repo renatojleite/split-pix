@@ -6,7 +6,7 @@ import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayMonth } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
-import { shownPeople, summarize } from '@/lib/summary';
+import { pairwiseDebts, shownPeople, summarize } from '@/lib/summary';
 import { colors, radius, space } from '@/theme';
 import { PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
 import { Avatar, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle } from '../ui';
@@ -27,6 +27,9 @@ export function BalancesTab({ detail, month, onMonth }: {
   const entries = source.data ?? [];
   const s = summarize(entries, members, detail.categories);
   const settlements = entries.filter((e) => e.type === 'transfer');
+  // Pendências: simplificado (menos transferências) é o padrão; direto mostra cada par.
+  const [view, setView] = useState<'simple' | 'direct'>('simple');
+  const debts = view === 'simple' ? s.transfers : pairwiseDebts(entries);
   const [pend, setPend] = useState<{ t: { from: string; to: string; cents: number }; anchor: Anchor } | null>(null);
   function pendItems(t: { from: string; to: string; cents: number }): MenuItem[] {
     const params = { from: t.from, to: t.to, amount: String(t.cents) };
@@ -54,15 +57,24 @@ export function BalancesTab({ detail, month, onMonth }: {
       {!source.isLoading ? (
         <View style={{ backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.divider,
           padding: space.lg, gap: space.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colors.text }}>Pendências</Text>
-            {s.transfers.length ? <Text style={{ fontSize: 12, color: colors.muted }}>total {formatBRL(s.pending)}</Text> : null}
+            {debts.length ? <Text style={{ fontSize: 12, color: colors.muted }}>total {formatBRL(debts.reduce((a, t) => a + t.cents, 0))}</Text> : null}
           </View>
-          {s.transfers.length === 0 ? (
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Chip label="Simplificado" selected={view === 'simple'} onPress={() => setView('simple')} />
+            <Chip label="Entre cada pessoa" selected={view === 'direct'} onPress={() => setView('direct')} />
+          </View>
+          <Text style={{ fontSize: 11, lineHeight: 15, color: colors.muted }}>
+            {view === 'simple'
+              ? 'Menor número de Pix para todo mundo ficar quite (alguém pode pagar a dívida de outro).'
+              : 'Quanto cada pessoa deve diretamente a cada outra, pelas despesas e acertos entre elas.'}
+          </Text>
+          {debts.length === 0 ? (
             <Text style={{ fontSize: 13, color: colors.positive, fontWeight: '600' }}>
               ✓ Ninguém deve nada {scope === 'month' ? 'neste mês' : 'no total'}
             </Text>
-          ) : s.transfers.map((t, i) => {
+          ) : debts.map((t, i) => {
             const mine = t.to === me?.id ? 'in' : t.from === me?.id ? 'out' : null;
             return (
               <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${name(t.from)} deve ${formatBRL(t.cents)} a ${name(t.to)}`}
@@ -81,7 +93,7 @@ export function BalancesTab({ detail, month, onMonth }: {
               </Pressable>
             );
           })}
-          {s.transfers.length ? <Text style={{ fontSize: 11, color: colors.muted }}>Toque numa pendência para pagar/receber via Pix ou registrar o acerto.</Text> : null}
+          {debts.length ? <Text style={{ fontSize: 11, color: colors.muted }}>Toque numa pendência para pagar/receber via Pix ou registrar o acerto.</Text> : null}
         </View>
       ) : null}
 

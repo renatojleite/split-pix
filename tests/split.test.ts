@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { activityLabel, addMonths, monthGrid, monthStart, seriesDates } from '../src/lib/dates.ts';
 import { centsFromInput, formatBRL, formatPercent } from '../src/lib/money.ts';
 import { allocateCents, effectiveRule, previewSplit, settleUp } from '../src/lib/split.ts';
-import { shownPeople, summarize } from '../src/lib/summary.ts';
+import { pairwiseDebts, shownPeople, summarize } from '../src/lib/summary.ts';
 import type { Category, Entry, Member, Rule } from '../src/lib/types.ts';
 
 const NO_PIX = { pix_key_type: null, pix_key: null, pix_name: null, pix_city: null };
@@ -239,4 +239,32 @@ test('data da última atividade: hoje, ontem ou data completa', () => {
   assert.equal(activityLabel(new Date(2026, 10, 9, 17, 35).toISOString(), now), 'hoje - 17h35');
   assert.equal(activityLabel(new Date(2026, 10, 8, 9, 5).toISOString(), now), 'ontem - 9h05');
   assert.equal(activityLabel(new Date(2026, 9, 20, 17, 35).toISOString(), now), '20/10/2026 - 17h35');
+});
+
+test('dívidas diretas entre cada par (caso real do grupo de 3 pessoas)', () => {
+  const N = 'nobrega';
+  const mk = (type: Entry['type'], amount: number, paid: string, shares: [string, number][], to: string | null = null): Entry => ({
+    id: Math.random().toString(), group_id: 'g', type, title: 't', amount_cents: amount, paid_by: paid, transfer_to: to,
+    category_id: null, emoji: null, occurred_on: '2026-11-09', split_mode: 'default', recurrence_id: null, recurrence_index: null,
+    recurrence_total: null, updated_by: null, updated_at: '', shares: shares.map(([member_id, share_cents]) => ({ member_id, share_cents, basis_points: null })),
+  });
+  const entries = [
+    mk('expense', 20000, R, [[P, 10000], [R, 10000]]),
+    mk('income', 11111, R, [[P, 5555], [R, 5556]]),
+    mk('transfer', 14400, P, [], R),
+    mk('expense', 9999, N, [[P, 3333], [R, 3333], [N, 3333]]),
+    mk('transfer', 1333, R, [], N),
+    mk('transfer', 19974, P, [], R),
+    mk('expense', 3300, P, [[P, 1650], [R, 1650]]),
+    mk('expense', 83249, R, [[P, 41624], [R, 41625]]),
+  ];
+  const d = pairwiseDebts(entries);
+  assert.deepEqual(d.find((x) => x.from === R && x.to === N), { from: R, to: N, cents: 2000 }, 'Renato → Nobrega R$ 20,00');
+  assert.deepEqual(d.find((x) => x.from === P && x.to === N), { from: P, to: N, cents: 3333 });
+  // Para cada pessoa, o que recebe − o que deve nas dívidas diretas = o saldo dela.
+  const members = [R, P, N].map((id, i): Member => ({ id, group_id: 'g', user_id: null, display_name: id, role: 'member', color: '#000', position: i, left_at: null, ...NO_PIX }));
+  for (const p of summarize(entries, members, []).people) {
+    const net = d.reduce((a, x) => a + (x.to === p.memberId ? x.cents : 0) - (x.from === p.memberId ? x.cents : 0), 0);
+    assert.equal(net, p.balance, p.memberId);
+  }
 });

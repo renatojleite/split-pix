@@ -243,13 +243,15 @@ function invoiceMerchant(ls: string[]): string | null {
 
 const COMPANY = /\b(ltda|me|s\.?a\.?|eireli|epp|companhia|comercio|supermercados?|mercados?|atacad\w*|distribuidora|drogaria|farmacia|padaria|restaurante|posto)\b/i;
 
-export function parseReceipt(text: string): ReceiptFields {
+export function parseReceipt(text: string, todayIso: string = new Date().toISOString().slice(0, 10)): ReceiptFields {
   const ls = lines(text);
   const all = plain(ls.join('\n'));
   const invoice = INVOICE.test(all);
   const byMath = invoice ? invoiceTotal(ls) : null;
   const amount = byMath !== null ? { cents: byMath, confidence: 'high' as Confidence } : findAmount(ls);
-  const date = findDate(ls);
+  const found = findDate(ls);
+  // Comprovante não tem data no futuro: provável erro de leitura (ex.: 2026 lido como 2028).
+  const date = found && found.date > todayIso ? { ...found, confidence: 'low' as Confidence } : found;
   // Na nota, quem recebe é a loja; o nome no rodapé é o do cliente (fica de fora).
   const toRaw = invoice ? invoiceMerchant(ls) : labelValue(ls, TO_LABELS) ?? sentenceName(ls.join('\n'), 'para');
   const fromRaw = invoice ? null : labelValue(ls, FROM_LABELS);

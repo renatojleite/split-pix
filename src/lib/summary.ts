@@ -102,3 +102,33 @@ export function summarize(entries: Entry[], members: Member[], categories: Categ
     categories: categoriesOut,
   };
 }
+
+/**
+ * Dívidas diretas entre cada par (sem simplificar): em cada despesa, quem participou deve
+ * a parte dele a quem pagou; numa entrada, quem recebeu deve a parte de cada um; um acerto
+ * de A para B abate o que A devia a B. No fim, compensa os dois sentidos de cada par.
+ */
+export function pairwiseDebts(entries: Entry[]): { from: string; to: string; cents: number }[] {
+  const owe = new Map<string, number>(); // "devedor>credor" → centavos
+  const add = (from: string, to: string, cents: number) => {
+    if (from === to || !cents) return;
+    owe.set(`${from}>${to}`, (owe.get(`${from}>${to}`) ?? 0) + cents);
+  };
+  for (const e of entries) {
+    if (e.type === 'expense') for (const sh of e.shares) add(sh.member_id, e.paid_by, sh.share_cents);
+    else if (e.type === 'income') for (const sh of e.shares) add(e.paid_by, sh.member_id, sh.share_cents);
+    else if (e.type === 'transfer' && e.transfer_to) add(e.transfer_to, e.paid_by, e.amount_cents);
+  }
+  const out: { from: string; to: string; cents: number }[] = [];
+  const done = new Set<string>();
+  for (const key of owe.keys()) {
+    const [a, b] = key.split('>');
+    const pair = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if (done.has(pair)) continue;
+    done.add(pair);
+    const net = (owe.get(`${a}>${b}`) ?? 0) - (owe.get(`${b}>${a}`) ?? 0);
+    if (net > 0) out.push({ from: a, to: b, cents: net });
+    else if (net < 0) out.push({ from: b, to: a, cents: -net });
+  }
+  return out.sort((x, y) => y.cents - x.cents);
+}

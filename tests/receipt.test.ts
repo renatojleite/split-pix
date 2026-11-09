@@ -237,3 +237,9 @@ test('nota fiscal: texto para suporte sem cliente, chave de acesso nem protocolo
   for (const s of ['FULANO', '3526 1111', '135260000000000', '12.345.678']) assert.ok(!red.includes(s), `vazou ${s}:\n${red}`);
   assert.ok(red.includes('832,49'));
 });
+
+test('data no futuro fica marcada para conferir', () => {
+  const r = parseReceipt('Pix enviado\nValor: R$ 10,00\nData: 08/11/2028 14:02', '2026-11-09');
+  assert.equal(r.date, '2028-11-08');
+  assert.equal(r.dateConfidence, 'low');
+});

@@ -135,6 +135,19 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
     !isTransfer && preview.error,
   ].filter(Boolean) as string[];
 
+  // Data estranha (bem no futuro ou muito antiga): confirma antes de salvar.
+  const [dateCheck, setDateCheck] = useState(false);
+  const now = today();
+  const far = (d: string, months: number) => {
+    const x = new Date(`${now}T12:00:00`); x.setMonth(x.getMonth() + months); return d > x.toISOString().slice(0, 10) ? 1 : 0;
+  };
+  const suspicious = date > now && far(date, 1) === 1 ? 'future' : date < `${Number(now.slice(0, 4)) - 1}${now.slice(4)}` ? 'past' : null;
+  function trySubmit() {
+    if (suspicious && !dateCheck) { setDateCheck(true); return; }
+    setDateCheck(false);
+    void submit();
+  }
+
   async function submit() {
     const allSelected = participants.size === members.length;
     const savedId = await save.mutateAsync({
@@ -186,7 +199,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen footer={<>
         <ErrorText>{save.error?.message}</ErrorText>
-        <Button title="Salvar" onPress={submit} disabled={errors.length > 0} loading={save.isPending} />
+        <Button title="Salvar" onPress={trySubmit} disabled={errors.length > 0} loading={save.isPending} />
       </>}>
         <Header title={isEditing ? 'Editar' : params.duplicateOf ? 'Duplicar' : 'Novo lançamento'}
           right={isEditing ? (
@@ -376,6 +389,20 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         ) : null}
         <CommentsModal visible={commentsOpen} onClose={() => setCommentsOpen(false)} groupId={id} entryId={entryId ?? null}
           title={title} comments={comments} members={detail.allMembers} myMemberId={me?.id} />
+        <Modal visible={dateCheck} transparent animationType="fade" onRequestClose={() => setDateCheck(false)} statusBarTranslucent>
+          <Pressable style={{ flex: 1, backgroundColor: colors.scrim, justifyContent: 'center', padding: space.xl }} onPress={() => setDateCheck(false)}>
+            <View onStartShouldSetResponder={() => true} style={{ backgroundColor: colors.surface, borderRadius: radius.card, padding: space.xl, gap: space.md }}>
+              <Text style={{ fontSize: 30, textAlign: 'center' }}>📅</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center' }}>Confere a data?</Text>
+              <Text style={{ fontSize: 14, lineHeight: 20, color: colors.textSoft, textAlign: 'center' }}>
+                O lançamento está para <Text style={{ fontWeight: '700', color: colors.text }}>{date.split('-').reverse().join('/')}</Text>,{' '}
+                {suspicious === 'future' ? 'que ainda está bem no futuro' : 'mais de um ano atrás'}. É isso mesmo?
+              </Text>
+              <Button title="Sim, salvar com essa data" onPress={() => { setDateCheck(false); void submit(); }} />
+              <Button title="Corrigir a data" variant="secondary" onPress={() => setDateCheck(false)} />
+            </View>
+          </Pressable>
+        </Modal>
       </Screen>
     </KeyboardAvoidingView>
   );
