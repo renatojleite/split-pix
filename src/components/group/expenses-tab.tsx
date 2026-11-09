@@ -13,7 +13,7 @@ import { CommentBadge, CommentBox, CommentsModal } from '../comments';
 import { Card, EmojiTile, ErrorText, Loading } from '../ui';
 import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
-import { PeopleBlock } from './people-block';
+import { MonthTotals, PeopleBlock } from './people-block';
 
 export function ExpensesTab({ detail, month, onMonth }: {
   detail: GroupDetail; month: string; onMonth: (m: string) => void;
@@ -33,9 +33,6 @@ export function ExpensesTab({ detail, month, onMonth }: {
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const day = pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
   const visible = day ? list.filter((e) => e.occurred_on === day) : list;
-  const expenses = list.filter((e) => e.type === 'expense');
-  const total = expenses.reduce((a, e) => a + e.amount_cents, 0);
-  const mine = expenses.reduce((a, e) => a + (e.shares.find((s) => s.member_id === me?.id)?.share_cents ?? 0), 0);
 
   const sections = Object.values(
     visible.reduce<Record<string, { title: string; data: Entry[] }>>((acc, e) => {
@@ -99,10 +96,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
       ListHeaderComponent={
         <View style={{ gap: space.md, paddingTop: space.sm }}>
           <MonthNav month={month} onMonth={onMonth} />
-          <View style={{ flexDirection: 'row' }}>
-            <Stat label="Minha parte" value={formatBRL(mine)} />
-            <Stat label="Total do mês" value={formatBRL(total)} />
-          </View>
+          <MonthTotals entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
           <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
           <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} />
           {day ? (
@@ -172,14 +166,5 @@ export function ExpensesTab({ detail, month, onMonth }: {
       entryId={commentFor?.id ?? null} title={commentFor?.title ?? ''} comments={commentFor ? commentsOf(commentFor.id) : []}
       members={detail.allMembers} myMemberId={me?.id} />
     </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
-      <Text style={{ fontSize: 12, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text }}>{value}</Text>
-    </View>
   );
 }
