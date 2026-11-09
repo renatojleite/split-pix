@@ -18,6 +18,8 @@ export type ReceiptFields = {
   method: 'pix' | 'ted' | 'boleto' | 'card' | null;
   /** Título sugerido para o lançamento, ex.: "Pix para Maria Souza". */
   title: string | null;
+  /** Nota fiscal de compra (NFC-e / cupom), não comprovante de transferência. */
+  invoice: boolean;
 };
 
 // ── texto ────────────────────────────────────────────────────────────────
@@ -38,7 +40,7 @@ function lines(text: string): string[] {
 // ── valor ────────────────────────────────────────────────────────────────
 
 const MONEY = /R\$\s*-?\s*((?:\d{1,3}(?:\.\d{3})+|\d+),\d{2})(?!\d)/g;
-const MONEY_NO_SYMBOL = /^(?:valor[^:]*:?\s*)((?:\d{1,3}(?:\.\d{3})+|\d+),\d{2})$/;
+const MONEY_NO_SYMBOL = /^(?:valor[^:\d]*:?\s*)((?:\d{1,3}(?:\.\d{3})+|\d+),\d{2})$/;
 
 function toCents(s: string): number {
   const [int, dec] = s.replace(/\./g, '').split(',');
@@ -46,7 +48,7 @@ function toCents(s: string): number {
 }
 
 // Valores que aparecem em comprovante mas não são o pagamento.
-const NOT_PAYMENT = /saldo|limite|disponivel|tarifa|juros|multa|desconto|cashback|parcela de|taxa/;
+const NOT_PAYMENT = /saldo|limite|disponivel|tarifa|juros|multa|desconto|cashback|parcela de|taxa|tributo|imposto|lei fed|12\.741|troco|acrescimo|economi/;
 
 function findAmount(ls: string[]): { cents: number; confidence: Confidence } | null {
   type Cand = { cents: number; score: number; order: number };
@@ -59,6 +61,8 @@ function findAmount(ls: string[]): { cents: number; confidence: Confidence } | n
     const push = (cents: number, base: number) => {
       let score = base;
       if (/valor|total|pago|pagou|enviad|transferid|recebid/.test(p)) score += 3;
+      if (/(valor|total) a pagar|valor pago|total pago/.test(p)) score += 4; // nota fiscal: o que de fato foi pago
+      if (/qtd|quantidade|itens/.test(p)) score -= 6;
       if (/^valor\b/.test(prev) || /^(valor|total)( pago| da transferencia| do pix)?:?$/.test(prev)) score += 3;
       if (/via pix|pix/.test(p)) score += 1;
       if (/^r\$\s*[\d.,]+$/.test(p)) score += 2; // sozinho na linha: costuma ser o destaque
@@ -76,8 +80,9 @@ function findAmount(ls: string[]): { cents: number; confidence: Confidence } | n
   valid.sort((a, b) => b.score - a.score || a.order - b.order);
   const best = valid[0];
   // Confiável se ganhou com folga ou se todos os candidatos concordam no valor.
-  const sameValue = valid.every((c) => c.cents === best.cents);
-  const margin = valid.length === 1 || sameValue || best.score - valid[1].score >= 2;
+  // (o mesmo valor pode aparecer em mais de um candidato; a folga é contra o melhor valor diferente)
+  const rival = valid.find((c) => c.cents !== best.cents);
+  const margin = !rival || best.score - rival.score >= 2;
   return { cents: best.cents, confidence: best.score >= 3 && margin ? 'high' : 'low' };
 }
 
@@ -198,40 +203,85 @@ function sentenceName(text: string, word: 'para' | 'de'): string | null {
 
 // ── principal ────────────────────────────────────────────────────────────
 
+// ── nota fiscal (NFC-e / cupom de mercado) ──────────────────────────────
+
+const INVOICE = /nfc-?e|valor a pagar|qtd\.? total de itens|chave de acesso|documento auxiliar|cupom fiscal|nota fiscal/;
+const BARE_MONEY = /^-?(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}$/;
+
+/**
+ * Totais da nota pela conta, não pela posição: na foto (e no OCR) a coluna de valores
+ * costuma sair separada ou deslocada dos rótulos. Procura 4 valores seguidos em que
+ * total − desconto + acréscimo = a pagar; o último desses blocos é o rodapé da nota.
+ */
+function invoiceTotal(ls: string[]): number | null {
+  const bare = ls.map((l) => l.replace(/^R\$\s*/i, '')).filter((l) => BARE_MONEY.test(l)).map(toCentsSigned);
+  let found: number | null = null;
+  for (let i = 0; i + 3 < bare.length; i++) {
+    const [t, d, a, p] = bare.slice(i, i + 4);
+    if (p > 0 && t >= p && d >= 0 && a >= 0 && t - d + a === p && (d > 0 || a > 0 || bare[i + 4] === p)) found = p;
+  }
+  return found;
+}
+
+function toCentsSigned(s: string): number {
+  return s.startsWith('-') ? -toCents(s.slice(1)) : toCents(s);
+}
+
+/** Nome da loja: no topo da nota, antes do CNPJ (o "Nome/Razão Social" do rodapé é o cliente). */
+function invoiceMerchant(ls: string[]): string | null {
+  const cnpj = ls.findIndex((l) => /cnpj/i.test(l));
+  if (cnpj <= 0) return null; // sem CNPJ à vista, o topo da nota não está na foto
+  const head = ls.slice(0, Math.min(cnpj, 6));
+  for (const l of head) {
+    const clean = l.replace(/[.,]+$/, '').trim();
+    const p = plain(clean);
+    if (/documento|auxiliar|nota|fiscal|consumidor|eletronica|nfc|extrato|cupom|cnpj|endereco|^rua|^av\b/.test(p)) continue;
+    if (/^[\p{L}][\p{L} .&'-]{3,60}$/u.test(clean) && clean.split(' ').length <= 8) return clean;
+  }
+  return null;
+}
+
+const COMPANY = /\b(ltda|me|s\.?a\.?|eireli|epp|companhia|comercio|supermercados?|mercados?|atacad\w*|distribuidora|drogaria|farmacia|padaria|restaurante|posto)\b/i;
+
 export function parseReceipt(text: string): ReceiptFields {
   const ls = lines(text);
   const all = plain(ls.join('\n'));
-  const amount = findAmount(ls);
+  const invoice = INVOICE.test(all);
+  const byMath = invoice ? invoiceTotal(ls) : null;
+  const amount = byMath !== null ? { cents: byMath, confidence: 'high' as Confidence } : findAmount(ls);
   const date = findDate(ls);
-  const toRaw = labelValue(ls, TO_LABELS) ?? sentenceName(ls.join('\n'), 'para');
-  const fromRaw = labelValue(ls, FROM_LABELS);
+  // Na nota, quem recebe é a loja; o nome no rodapé é o do cliente (fica de fora).
+  const toRaw = invoice ? invoiceMerchant(ls) : labelValue(ls, TO_LABELS) ?? sentenceName(ls.join('\n'), 'para');
+  const fromRaw = invoice ? null : labelValue(ls, FROM_LABELS);
   const toName = toRaw ? nameCase(toRaw) : null;
   const fromName = fromRaw && fromRaw !== toRaw ? nameCase(fromRaw) : null;
 
   const method: ReceiptFields['method'] =
     /\bpix\b/.test(all) ? 'pix'
-    : /\bted\b|\bdoc\b/.test(all) ? 'ted'
-    : /boleto|codigo de barras|linha digitavel/.test(all) ? 'boleto'
+    : /\bted\b|\bdoc\b/.test(all) && !invoice ? 'ted'
+    : /boleto|codigo de barras|linha digitavel/.test(all) && !invoice ? 'boleto'
     : /cartao|credito|debito/.test(all) ? 'card'
     : null;
 
   const short = toName ? shortName(toName) : null;
-  const title = short
-    ? method === 'boleto' ? `Boleto ${short}` : method === 'pix' ? `Pix para ${short}` : `Pagamento para ${short}`
-    : method === 'boleto' ? 'Boleto' : method === 'pix' ? 'Pix' : null;
+  const title = invoice
+    ? short ? `Compra ${short}` : 'Compra (nota fiscal)'
+    : short
+      ? method === 'boleto' ? `Boleto ${short}` : method === 'pix' ? `Pix para ${short}` : `Pagamento para ${short}`
+      : method === 'boleto' ? 'Boleto' : method === 'pix' ? 'Pix' : null;
 
   return {
     amountCents: amount?.cents ?? null,
     amountConfidence: amount?.confidence ?? 'low',
     date: date?.date ?? null,
     dateConfidence: date?.confidence ?? 'low',
-    toName, fromName, method, title,
+    toName, fromName, method, title, invoice,
   };
 }
 
 /** Primeiro e último nome para o título ("Maria Aparecida de Souza Lima" → "Maria Lima"); empresa fica inteira. */
 export function shortName(name: string): string {
-  if (/\b(ltda|me|s\.?a\.?|eireli|epp)\b/i.test(name)) return name.slice(0, 40);
+  if (COMPANY.test(name)) return name.slice(0, 40);
   const words = name.split(' ').filter((w) => !CONNECTORS.has(w.toLowerCase()));
   return words.length <= 2 ? words.join(' ') : `${words[0]} ${words[words.length - 1]}`;
 }
@@ -261,7 +311,7 @@ export function redactReceipt(text: string): string {
     const p = plain(line);
     if (hideNext > 0) { hideNext--; return looksLikeName(line) || /\d{4,}|[*•]/.test(line) || /^[a-z0-9]{10,}$/i.test(line) ? '[removido]' : line; }
     // Rótulo de dado sensível: esconde o valor (na linha ou na seguinte).
-    const sens = p.match(/^(cpf|cnpj|chave( pix)?|autenticacao|id da transacao|codigo|agencia|conta|e2e|protocolo|nsu|identificador)\b[^:]*:?\s*(.*)$/);
+    const sens = p.match(/^(cpf|cnpj|chave( pix| de acesso)?|autenticacao|id da transacao|codigo|agencia|conta|e2e|protocolo|nsu|identificador|nome\/razao social|nome|consumidor|cliente)\b[^:]*:?\s*(.*)$/);
     if (sens) {
       if (!sens[3]) { hideNext = 1; return line; }
       return `${line.slice(0, line.length - sens[3].length).trim()} [removido]`;

@@ -157,3 +157,83 @@ test('texto para suporte: sem nomes, documentos, chaves nem códigos', () => {
   const inline = redactReceipt(INLINE);
   assert.ok(!inline.includes('PADARIA') && !inline.includes('Joao'), inline);
 });
+
+// Nota fiscal de mercado (NFC-e). Dados fictícios.
+const NFCE_LINHAS = `SUPERMERCADO BOM PRECO LTDA
+CNPJ: 12.345.678/0001-90
+Rua das Flores, 100 - Sao Paulo
+Documento Auxiliar da Nota Fiscal de Consumidor Eletronica
+049 259385 MELAO AMAR REI KG 2,525 kg X 17,99 45,42
+050 1413613 BISCUIT BAUD NET 80G 1 UN X 9,99 9,99
+desconto sobre item -3,00
+QTD. TOTAL DE ITENS 55
+VALOR TOTAL R$ 900,11
+DESCONTO R$ 67,62
+ACRESCIMO R$ 0,00
+VALOR A PAGAR R$ 832,49
+CARTAO 832,49
+Consulte pela Chave de Acesso em
+https://www.nfce.fazenda.sp.gov.br/consulta
+3526 1111 2222 3333 4444 5555 6666 7777 8888 9999 0000
+NFC-e 000123456 Serie 107 08/11/2026 17:31:48
+Protocolo de autorizacao: 135260000000000
+Data de autorizacao 08/11/2026 17:31:48
+Nome/Razao Social: FULANO DE TAL
+Tributos Totais Incidentes (Lei Fed 12.741/2012): R$ 258,36`;
+
+// Como na foto: valores numa coluna separada e deslocada dos rótulos.
+const NFCE_COLUNA = `050 1413613 BISCUIT BAUD NET 80G 1 UN X 9,99 (2,20)
+9,99
+desconto sobre item
+-3,00
+051 66662 FILEZINHO BJA SEARA
+25,02
+0,738 kg X 33,90 (7,87)
+055 2010854 GELEIA HOM MOR 320G 1 UN X 26,99 (8,49)
+26,99
+55
+QTD. TOTAL DE ITENS
+900,11
+VALOR TOTAL R$
+67,62
+DESCONTO R$
+0,00
+ACRESCIMO R$
+832,49
+VALOR A PAGAR R$
+832,49
+CARTAOON
+Consulte pela Chave de Acesso em
+NFC-e 000123456 Serie 107 08/11/2026 17:31:
+Data de autorizacao 08/11/2026 17:31:48
+Nome/Razao Social: FULANO DE TAL
+Volumes: 65
+(Lei Fed 12.741/2012): R$ 258,36`;
+
+test('nota fiscal de mercado: valor a pagar, data e loja (não o cliente)', () => {
+  const r = parseReceipt(NFCE_LINHAS);
+  assert.equal(r.invoice, true);
+  assert.equal(r.amountCents, 83249);
+  assert.equal(r.amountConfidence, 'high');
+  assert.equal(r.date, '2026-11-08');
+  assert.equal(r.toName, 'Supermercado Bom Preco LTDA');
+  assert.equal(r.fromName, null);
+  assert.equal(r.title, 'Compra Supermercado Bom Preco LTDA');
+  assert.equal(r.method, 'card');
+  assert.ok(!JSON.stringify(r).includes('Fulano'), 'nome do cliente fica de fora');
+});
+
+test('nota fiscal com a coluna de valores deslocada (foto): acha o total pela conta', () => {
+  const r = parseReceipt(NFCE_COLUNA);
+  assert.equal(r.amountCents, 83249, 'total 900,11 − desconto 67,62 + acréscimo 0,00');
+  assert.equal(r.amountConfidence, 'high');
+  assert.equal(r.date, '2026-11-08');
+  assert.equal(r.toName, null, 'loja fora da foto: não inventa (e não usa o cliente)');
+  assert.equal(r.title, 'Compra (nota fiscal)');
+});
+
+test('nota fiscal: texto para suporte sem cliente, chave de acesso nem protocolo', () => {
+  const red = redactReceipt(NFCE_LINHAS);
+  for (const s of ['FULANO', '3526 1111', '135260000000000', '12.345.678']) assert.ok(!red.includes(s), `vazou ${s}:\n${red}`);
+  assert.ok(red.includes('832,49'));
+});

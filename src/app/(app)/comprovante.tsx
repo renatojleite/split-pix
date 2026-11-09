@@ -172,16 +172,17 @@ export default function ComprovanteScreen() {
 function Review({ r, text, onRetry }: { r: ReceiptFields; text: string; onRetry: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
-    <StepBody emoji="🔎" kicker="A IA ENCONTROU" title={r.amountCents !== null ? formatBRL(r.amountCents) : 'Valor não encontrado'}
+    <StepBody emoji={r.invoice ? '🛒' : '🔎'} kicker={r.invoice ? 'A IA LEU A NOTA FISCAL' : 'A IA ENCONTROU'}
+      title={r.amountCents !== null ? formatBRL(r.amountCents) : 'Valor não encontrado'}
       text={r.title ?? 'Confira os dados lidos do comprovante.'}>
       <Card style={{ gap: space.md }}>
         <Found label="Valor" value={r.amountCents !== null ? formatBRL(r.amountCents) : null} low={r.amountConfidence === 'low'} />
         <Found label="Data" value={r.date ? r.date.split('-').reverse().join('/') : null} low={r.dateConfidence === 'low'} />
-        <Found label="Para" value={r.toName} />
-        <Found label="De" value={r.fromName} />
+        <Found label={r.invoice ? 'Loja' : 'Para'} value={r.toName} />
+        {r.invoice ? null : <Found label="De" value={r.fromName} />}
       </Card>
       <Text style={{ fontSize: 12, lineHeight: 17, color: colors.muted }}>
-        ⚠️ marca o que vale conferir com atenção. Você ainda ajusta tudo antes de salvar.
+        {r.invoice ? 'Valor a pagar já com descontos, conferido pela conta da nota. ' : ''}⚠️ marca o que vale conferir com atenção. Você ainda ajusta tudo antes de salvar.
       </Text>
       <View style={{ flexDirection: 'row', gap: space.lg, flexWrap: 'wrap' }}>
         <Pressable onPress={onRetry} hitSlop={8}>
