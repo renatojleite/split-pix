@@ -118,6 +118,12 @@ test('resumo: totais, por pessoa e por categoria batem com o exemplo do PRD', ()
   assert.equal(s.categories.find((c) => c.name === 'Sem categoria')?.cents, 20000);
   assert.ok(Math.abs(s.categories.reduce((a, c) => a + c.ratio, 0) - 1) < 1e-9);
 
+  // A conta mostrada em Saldos fecha: (pagou + enviados) − cota − recebidos − (entradas − sua parte) = saldo.
+  const withTransfer = summarize([...entries, e('transfer', 20000, P, null, [], R)], members, categories);
+  for (const x of withTransfer.people) {
+    assert.equal((x.paid + x.sent) - x.share - x.got - (x.received - x.incomeShare), x.balance);
+  }
+
   const settled = summarize([...entries, e('transfer', 47500, P, null, [], R)], members, categories);
   assert.equal(settled.pending, 0);
   assert.equal(settled.spent, 335000);

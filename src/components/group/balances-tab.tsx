@@ -80,23 +80,40 @@ export function BalancesTab({ detail, month, onMonth }: {
       <SectionTitle>Por pessoa</SectionTitle>
       {shownPeople(s.people, members).map((p) => {
         const m = members.find((x) => x.id === p.memberId)!;
+        // A conta do saldo, linha a linha: total gasto (pagou + acertos enviados) − cota = saldo.
+        const spentTotal = p.paid + p.sent;
+        const incomeNet = p.received - p.incomeShare; // ficou com a parte dos outros numa entrada
+        const tone = p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted;
         return (
-          <Card key={m.id} style={{ gap: 9 }}>
+          <Card key={m.id} style={{ gap: space.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
               <Avatar name={m.display_name} color={m.color} />
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: colors.text }}>
+              <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colors.text }}>
                 {m.display_name}{m.id === me?.id ? <Text style={{ fontSize: 12, fontWeight: '400', color: colors.muted }}>  você</Text> : null}
               </Text>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted }}>
-                {formatBRL(p.balance, { sign: true })}
-              </Text>
             </View>
-            <View style={{ gap: 3 }}>
-              <Row label="Pagou" value={formatBRL(p.paid)} />
-              <Row label="Parte nos gastos" value={formatBRL(p.share)} />
-              {p.received || p.incomeShare ? <Row label="Receitas (recebeu / parte)" value={`${formatBRL(p.received)} / ${formatBRL(p.incomeShare)}`} /> : null}
-              <Row label="Acertos enviados" value={formatBRL(p.sent)} />
-              <Row label="Acertos recebidos" value={formatBRL(p.got)} />
+            <View style={{ gap: 4 }}>
+              <Line sign="" label="Pagou" value={p.paid} />
+              <Line sign="+" label="Acertos enviados" value={p.sent} />
+              <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: 2 }} />
+              <Line sign="=" label="Total gasto" value={spentTotal} strong />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 2, paddingHorizontal: space.sm,
+                paddingVertical: 7, borderRadius: 10, backgroundColor: colors.primarySoft }}>
+                <Text style={{ width: 14, fontSize: 14, fontWeight: '700', color: colors.primaryInk }}>−</Text>
+                <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: colors.primaryInk }}>Cota por pessoa</Text>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primaryInk }}>{formatBRL(p.share)}</Text>
+              </View>
+              {p.got ? <Line sign="−" label="Acertos recebidos" value={p.got} /> : null}
+              {incomeNet ? <Line sign={incomeNet > 0 ? '−' : '+'} label="Entradas (recebeu além da sua parte)" value={Math.abs(incomeNet)} /> : null}
+              <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: 2 }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.sm, paddingVertical: 9,
+                borderRadius: 10, backgroundColor: p.balance > 0 ? colors.positiveSoft : p.balance < 0 ? colors.negativeSoft : colors.card }}>
+                <Text style={{ width: 14, fontSize: 16, fontWeight: '800', color: tone }}>=</Text>
+                <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: tone }}>
+                  Saldo{p.balance > 0 ? ' · a receber' : p.balance < 0 ? ' · a pagar' : ' · em dia'}
+                </Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: tone }}>{formatBRL(p.balance, { sign: true })}</Text>
+              </View>
             </View>
           </Card>
         );
@@ -124,17 +141,19 @@ export function BalancesTab({ detail, month, onMonth }: {
       )}
 
       <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
-        Saldo = pagou − parte nos gastos + acertos enviados − acertos recebidos (receitas entram também). Atualiza na hora quando alguém do grupo lança.
+        Total gasto = o que a pessoa pagou + acertos que ela enviou. Saldo = total gasto − cota por pessoa − acertos recebidos (entradas entram também). Atualiza na hora quando alguém do grupo lança.
       </Text>
     </ScrollView>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Line({ sign, label, value, strong }: { sign: string; label: string; value: number; strong?: boolean }) {
+  const style = { fontSize: strong ? 14 : 13, fontWeight: strong ? ('700' as const) : ('400' as const), color: strong ? colors.text : colors.textSoft };
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <Text style={{ fontSize: 12, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSoft }}>{value}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.sm }}>
+      <Text style={[style, { width: 14, color: colors.muted }]}>{sign}</Text>
+      <Text style={[style, { flex: 1 }]}>{label}</Text>
+      <Text style={style}>{formatBRL(value)}</Text>
     </View>
   );
 }
