@@ -1,24 +1,44 @@
-import { Pressable, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 
 import { dayLabel, monthGrid, today } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
-import { PREF, usePref } from '@/lib/prefs';
 import type { Entry } from '@/lib/types';
 import { colors, space } from '@/theme';
 import { Icon } from '../icons';
-import { Card } from '../ui';
 
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+const WEEK_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const CELL = 52; // largura de cada dia na faixa (com o espaço entre eles)
+
+export type CalendarMode = 'off' | 'week' | 'month';
+
+/** Botão "📅 Calendário ▾" que fica ao lado do mês. */
+export function CalendarToggle({ mode, onMode }: { mode: CalendarMode; onMode: (m: CalendarMode) => void }) {
+  const open = mode !== 'off';
+  return (
+    <Pressable onPress={() => onMode(open ? 'off' : 'week')} accessibilityRole="button" accessibilityState={{ expanded: open }}
+      accessibilityLabel={open ? 'Fechar calendário' : 'Abrir calendário'} hitSlop={6}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, height: 32, borderRadius: 16,
+        backgroundColor: open ? colors.primary : pressed ? colors.primarySoft : colors.primarySoft })}>
+      <Icon name="calendar" size={14} color={open ? '#FFFFFF' : colors.primary} />
+      <Text style={{ fontSize: 12, fontWeight: '700', color: open ? '#FFFFFF' : colors.primary }}>Calendário {open ? '▴' : '▾'}</Text>
+    </Pressable>
+  );
+}
 
 /**
- * Calendário do mês dentro da aba Despesas: dias com lançamento em destaque
- * (pontinhos = quantidade). Tocar num dia filtra a lista; tocar de novo limpa.
+ * Calendário da aba Despesas, aberto pelo botão ao lado do mês: uma faixa com os dias
+ * (rola para os lados) ou o mês inteiro. Dias com lançamento têm destaque; tocar filtra
+ * a lista, tocar de novo limpa.
  */
-export function CalendarBlock({ month, entries, selected, onSelect }: {
+export function CalendarPanel({ month, entries, selected, onSelect, mode, onMode }: {
   month: string; entries: Entry[]; selected: string | null; onSelect: (day: string | null) => void;
+  mode: CalendarMode; onMode: (m: CalendarMode) => void;
 }) {
-  const [open, setOpen] = usePref(PREF.calendarOpen, false);
   const t = today();
+  const scroller = useRef<ScrollViewInstance>(null);
+  const scrolledFor = useRef<string | null>(null);
 
   const byDay = new Map<string, { count: number; spent: number }>();
   for (const e of entries) {
@@ -27,24 +47,50 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
     if (e.type === 'expense') d.spent += e.amount_cents;
     byDay.set(e.occurred_on, d);
   }
-  const daysWithEntries = byDay.size;
+  if (mode === 'off') return null;
+
+  const days = monthGrid(month).flat().filter((d): d is string => !!d);
+  // Começa mostrando o dia escolhido, ou hoje, ou o último dia com lançamento.
+  const focus = selected ?? (days.includes(t) ? t : [...byDay.keys()].sort().at(-1) ?? days[0]);
+  const focusIndex = Math.max(0, days.indexOf(focus));
+
+  const label = (d: string) => {
+    const info = byDay.get(d);
+    return info ? `${dayLabel(d)}: ${info.count} lançamentos, ${formatBRL(info.spent)}` : dayLabel(d);
+  };
 
   return (
-    <Card style={{ padding: 0 }}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: space.lg, minHeight: 46 }}>
-        <Icon name="calendar" size={15} color={colors.primary} />
-        <Text style={{ flex: 1, fontSize: 13, fontWeight: '700', color: colors.text }}>Calendário</Text>
-        <Text style={{ fontSize: 12, color: colors.muted }}>
-          {daysWithEntries ? `${daysWithEntries} ${daysWithEntries === 1 ? 'dia' : 'dias'} com lançamento` : 'sem lançamentos'}
-        </Text>
-        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
-          <Icon name="chevron-right" size={15} color={colors.muted} />
-        </View>
-      </Pressable>
-
-      {open ? (
-        <View style={{ borderTopWidth: 1, borderColor: colors.divider, paddingHorizontal: space.sm, paddingVertical: space.sm, gap: 2 }}>
+    <View style={{ backgroundColor: colors.card, borderRadius: 19, paddingVertical: space.sm, gap: 4 }}>
+      {mode === 'week' ? (
+        <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: space.sm, gap: 6 }}
+          onContentSizeChange={() => {
+            const key = `${month}|${focus}`;
+            if (scrolledFor.current === key) return;
+            scrolledFor.current = key;
+            scroller.current?.scrollTo({ x: Math.max(0, (focusIndex - 3) * CELL), animated: false });
+          }}>
+          {days.map((d) => {
+            const has = byDay.has(d);
+            const isSel = d === selected;
+            const weekday = WEEK_SHORT[new Date(`${d}T12:00:00`).getDay()];
+            return (
+              <Pressable key={d} disabled={!has && !isSel} onPress={() => onSelect(isSel ? null : d)} accessibilityRole="button"
+                accessibilityState={{ selected: isSel, disabled: !has }} accessibilityLabel={label(d)}
+                style={{ width: CELL - 6, paddingVertical: 6, borderRadius: 12, alignItems: 'center', gap: 1,
+                  backgroundColor: isSel ? colors.primary : has ? colors.primarySoft : 'transparent',
+                  borderWidth: d === t && !isSel ? 1.5 : 0, borderColor: colors.primary }}>
+                <Text style={{ fontSize: 11, color: isSel ? colors.primarySoft : colors.muted }}>{weekday}</Text>
+                <Text style={{ fontSize: 16, fontWeight: has || isSel ? '800' : '500', color: isSel ? '#FFFFFF' : has ? colors.primaryInk : colors.textSoft }}>
+                  {Number(d.slice(8))}
+                </Text>
+                <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: has ? (isSel ? '#FFFFFF' : colors.primary) : 'transparent' }} />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        <View style={{ paddingHorizontal: space.sm, gap: 2 }}>
           <View style={{ flexDirection: 'row' }}>
             {WEEKDAYS.map((w, i) => (
               <Text key={i} style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: colors.muted }}>{w}</Text>
@@ -59,14 +105,12 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
                 const has = !!info;
                 return (
                   <Pressable key={d} disabled={!has && !isSel} onPress={() => onSelect(isSel ? null : d)}
-                    accessibilityRole="button" accessibilityState={{ selected: isSel, disabled: !has }}
-                    accessibilityLabel={has ? `${dayLabel(d)}: ${info.count} lançamentos, ${formatBRL(info.spent)}` : dayLabel(d)}
+                    accessibilityRole="button" accessibilityState={{ selected: isSel, disabled: !has }} accessibilityLabel={label(d)}
                     style={{ flex: 1, height: 44, alignItems: 'center', justifyContent: 'center' }}>
                     <View style={{ width: 35, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center', gap: 2,
                       backgroundColor: isSel ? colors.primary : has ? colors.primarySoft : 'transparent',
                       borderWidth: d === t && !isSel ? 1.5 : 0, borderColor: colors.primary }}>
-                      <Text style={{ fontSize: 13, fontWeight: has || isSel ? '700' : '400',
-                        color: isSel ? '#FFFFFF' : has ? colors.primaryInk : colors.muted }}>
+                      <Text style={{ fontSize: 13, fontWeight: has || isSel ? '700' : '400', color: isSel ? '#FFFFFF' : has ? colors.primaryInk : colors.muted }}>
                         {Number(d.slice(8))}
                       </Text>
                       {has ? (
@@ -82,11 +126,14 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
               })}
             </View>
           ))}
-          <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', paddingTop: 3 }}>
-            Toque num dia destacado para ver só os lançamentos dele.
-          </Text>
         </View>
-      ) : null}
-    </Card>
+      )}
+      <Pressable onPress={() => onMode(mode === 'week' ? 'month' : 'week')} hitSlop={6} accessibilityRole="button"
+        style={{ alignSelf: 'center', paddingHorizontal: space.md, paddingVertical: 3 }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>
+          {mode === 'week' ? '▾ Ver o mês inteiro' : '▴ Mostrar só a faixa de dias'}
+        </Text>
+      </Pressable>
+    </View>
   );
 }

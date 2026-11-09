@@ -14,7 +14,7 @@ import { CommentBadge, CommentBox, CommentsModal } from '../comments';
 import { MoreButton, PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
 import { Card, Chip, EmojiTile, ErrorText, Loading } from '../ui';
 import { CategorySheet, ConfirmSheet, DuplicateSheet, SelectionBar } from './bulk';
-import { CalendarBlock } from './calendar-block';
+import { CalendarPanel, CalendarToggle, type CalendarMode } from './calendar-block';
 import { MonthNav } from './month-nav';
 import { MonthTotals, PeopleBlock } from './people-block';
 
@@ -44,6 +44,9 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   const [commentFor, setCommentFor] = useState<Entry | null>(null);
   // Dia escolhido no calendário; vale só enquanto o mês mostrado é o mesmo.
   const [pickedDay, setPickedDay] = useState<string | null>(null);
+  const [calMode, setCalMode] = usePref<CalendarMode>(PREF.calendarMode, 'off');
+  // Fechar o calendário também tira o filtro do dia.
+  const changeCal = (m: CalendarMode) => { setCalMode(m); if (m === 'off') setPickedDay(null); };
   const day = !allTime && pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
   const visible = day ? list.filter((e) => e.occurred_on === day) : list;
 
@@ -149,10 +152,10 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
             <Chip label="Por mês" selected={!allTime} onPress={() => setScope('month')} />
             <Chip label="Todo o período" selected={allTime} onPress={() => setScope('all')} />
           </View>
-          {!allTime ? <MonthNav month={month} onMonth={onMonth} /> : null}
-          <MonthTotals entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
-          <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} allTime={allTime} />
-          {!allTime ? <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} /> : null}
+          {!allTime ? <MonthNav month={month} onMonth={onMonth} extra={<CalendarToggle mode={calMode} onMode={changeCal} />} /> : null}
+          {!allTime ? (
+            <CalendarPanel month={month} entries={list} selected={day} onSelect={setPickedDay} mode={calMode} onMode={changeCal} />
+          ) : null}
           {day ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 12, backgroundColor: colors.primarySoft }}>
               <Text style={{ flex: 1, fontSize: 12, color: colors.primaryInk }}>
@@ -163,6 +166,8 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
               </Pressable>
             </View>
           ) : null}
+          <MonthTotals entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
+          <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} allTime={allTime} />
           <View style={{ width: '30%', alignSelf: 'center', height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
           {withComments > 0 ? (
             <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
