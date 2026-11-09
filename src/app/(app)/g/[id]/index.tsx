@@ -66,7 +66,7 @@ export default function GroupScreen() {
           { value: 'despesas', label: 'Despesas' },
           { value: 'saldos', label: 'Saldos' },
           { value: 'resumo', label: 'Resumo' },
-          { value: 'divisao', label: 'Divisão' },
+          { value: 'divisao', label: 'Divisão e configurações', icon: 'settings', iconOnly: true },
         ]} />
       </View>
 

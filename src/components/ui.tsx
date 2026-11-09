@@ -103,19 +103,25 @@ export function Chip({ label, selected, onPress, color }: {
 }
 
 export function Segmented<T extends string>({ options, value, onChange, accent = false }: {
-  options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; accent?: boolean;
+  /** `icon` sem `label` vira um botão só de ícone, menor (ex.: configurações). */
+  options: { value: T; label: string; icon?: IconName; iconOnly?: boolean }[]; value: T; onChange: (v: T) => void; accent?: boolean;
 }) {
   return (
     <View style={styles.segmented} accessibilityRole="tablist">
       {options.map((o) => {
         const on = o.value === value;
+        const tint = on ? (accent ? '#FFFFFF' : colors.text) : colors.muted;
         return (
-          <Pressable key={o.value} accessibilityRole="tab" accessibilityState={{ selected: on }}
+          <Pressable key={o.value} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={o.label}
             onPress={() => onChange(o.value)}
-            style={[styles.segment, on && (accent ? styles.segmentAccent : styles.segmentOn)]}>
-            <Text style={[styles.segmentText, on && { fontWeight: '600', color: accent ? '#FFFFFF' : colors.text }]}>
-              {o.label}
-            </Text>
+            style={[styles.segment, o.iconOnly && { flex: 0, width: 38 }, on && (accent ? styles.segmentAccent : styles.segmentOn)]}>
+            {o.iconOnly && o.icon ? (
+              <Icon name={o.icon} size={16} color={tint} strokeWidth={on ? 2.2 : 1.8} />
+            ) : (
+              <Text style={[styles.segmentText, on && { fontWeight: '600', color: accent ? '#FFFFFF' : colors.text }]}>
+                {o.label}
+              </Text>
+            )}
           </Pressable>
         );
       })}
