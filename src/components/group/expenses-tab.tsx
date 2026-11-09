@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useComments, useDeleteEntries, useDeleteEntry, useDuplicateEntries, useEntries, useSetEntriesCategory, type GroupDetail } from '@/lib/api';
+import { useAllEntries, useComments, useDeleteEntries, useDeleteEntry, useDuplicateEntries, useEntries, useSetEntriesCategory, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayLabel } from '@/lib/dates';
 import { formatBRL, formatPercent } from '@/lib/money';
@@ -12,7 +12,7 @@ import type { Entry } from '@/lib/types';
 import { colors, defaultEmoji, space } from '@/theme';
 import { CommentBadge, CommentBox, CommentsModal } from '../comments';
 import { MoreButton, PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
-import { Card, EmojiTile, ErrorText, Loading } from '../ui';
+import { Card, Chip, EmojiTile, ErrorText, Loading } from '../ui';
 import { CategorySheet, ConfirmSheet, DuplicateSheet, SelectionBar } from './bulk';
 import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
@@ -27,7 +27,12 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
 }) {
   const insets = useSafeAreaInsets();
   const userId = useUserId();
-  const entries = useEntries(detail.group.id, month);
+  // Por mês (padrão) ou todo o período, somado.
+  const [scope, setScope] = usePref<'month' | 'all'>(PREF.expensesScope, 'month');
+  const allTime = scope === 'all';
+  const monthly = useEntries(detail.group.id, month);
+  const everything = useAllEntries(detail.group.id, allTime);
+  const entries = allTime ? everything : monthly;
   const me = detail.members.find((m) => m.user_id === userId);
   const name = (id: string | null) => detail.allMembers.find((m) => m.id === id)?.display_name ?? '—';
   const category = (id: string | null) => detail.categories.find((c) => c.id === id);
@@ -39,12 +44,12 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   const [commentFor, setCommentFor] = useState<Entry | null>(null);
   // Dia escolhido no calendário; vale só enquanto o mês mostrado é o mesmo.
   const [pickedDay, setPickedDay] = useState<string | null>(null);
-  const day = pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
+  const day = !allTime && pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
   const visible = day ? list.filter((e) => e.occurred_on === day) : list;
 
   const sections = Object.values(
     visible.reduce<Record<string, { title: string; data: Entry[] }>>((acc, e) => {
-      (acc[e.occurred_on] ??= { title: dayLabel(e.occurred_on), data: [] }).data.push(e);
+      (acc[e.occurred_on] ??= { title: allTime ? `${dayLabel(e.occurred_on)} de ${e.occurred_on.slice(0, 4)}` : dayLabel(e.occurred_on), data: [] }).data.push(e);
       return acc;
     }, {}),
   );
@@ -140,10 +145,14 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
       contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: selected ? 170 : 106, gap: space.sm }}
       ListHeaderComponent={
         <View style={{ gap: space.md, paddingTop: space.sm }}>
-          <MonthNav month={month} onMonth={onMonth} />
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <Chip label="Por mês" selected={!allTime} onPress={() => setScope('month')} />
+            <Chip label="Todo o período" selected={allTime} onPress={() => setScope('all')} />
+          </View>
+          {!allTime ? <MonthNav month={month} onMonth={onMonth} /> : null}
           <MonthTotals entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
-          <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
-          <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} />
+          <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} allTime={allTime} />
+          {!allTime ? <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} /> : null}
           {day ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 12, backgroundColor: colors.primarySoft }}>
               <Text style={{ flex: 1, fontSize: 12, color: colors.primaryInk }}>
@@ -173,7 +182,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
       ListEmptyComponent={
         entries.isLoading ? undefined : (
           <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 13, paddingVertical: 35 }}>
-            {day ? 'Nenhum lançamento neste dia.' : 'Nenhum lançamento neste mês.'}
+            {day ? 'Nenhum lançamento neste dia.' : allTime ? 'Nenhum lançamento ainda.' : 'Nenhum lançamento neste mês.'}
           </Text>
         )
       }

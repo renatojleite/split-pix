@@ -52,8 +52,8 @@ export function MonthTotals({ entries, members, categories, meId }: {
  * "Quanto cada pessoa pagou" no mês. Retraído por padrão (nome — R$ e mini barra);
  * aberto mostra % do total, nº de despesas e o acerto. "Fixar" deixa sempre aberto (guardado no celular).
  */
-export function PeopleBlock({ entries, members, categories }: {
-  entries: Entry[]; members: Member[]; categories: Category[]; meId?: string;
+export function PeopleBlock({ entries, members, categories, allTime }: {
+  entries: Entry[]; members: Member[]; categories: Category[]; meId?: string; allTime?: boolean;
 }) {
   const [pinned, setPinned] = usePref(PREF.peoplePinned, false);
   const [open, setOpen] = useState(false);
@@ -123,11 +123,11 @@ export function PeopleBlock({ entries, members, categories }: {
           <View style={{ borderTopWidth: 1, borderColor: colors.divider, paddingTop: space.md, gap: 4 }}>
             {pairwiseDebts(entries).length ? pairwiseDebts(entries).map((t, i) => (
               <Text key={i} style={{ fontSize: 13, color: colors.text }}>
-                ⚖️ Acerto do mês: <Text style={{ fontWeight: '700' }}>{name(t.from)}</Text> deve{' '}
+                ⚖️ {allTime ? 'Pendente' : 'Acerto do mês'}: <Text style={{ fontWeight: '700' }}>{name(t.from)}</Text> deve{' '}
                 <Text style={{ fontWeight: '700', color: colors.negative }}>{formatBRL(t.cents)}</Text> a <Text style={{ fontWeight: '700' }}>{name(t.to)}</Text>
               </Text>
             )) : (
-              <Text style={{ fontSize: 13, color: colors.positive, fontWeight: '600' }}>✓ Ninguém deve nada neste mês</Text>
+              <Text style={{ fontSize: 13, color: colors.positive, fontWeight: '600' }}>✓ Ninguém deve nada {allTime ? 'no total' : 'neste mês'}</Text>
             )}
           </View>
         </>
