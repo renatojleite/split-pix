@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
-  type StyleProp, type TextInputProps, type ViewStyle,
+  type GestureResponderEvent, type StyleProp, type TextInputProps, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -146,7 +146,7 @@ export function Input(props: TextInputProps & { big?: boolean }) {
 // ───────────── Conteúdo ─────────────
 
 export function Card({ children, style, onPress, onLongPress }: {
-  children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; onLongPress?: () => void;
+  children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; onLongPress?: (e: GestureResponderEvent) => void;
 }) {
   if (!onPress) return <View style={[styles.card, style]}>{children}</View>;
   return (

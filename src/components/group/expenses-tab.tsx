@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
+import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
 
 import { useComments, useDeleteEntry, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
@@ -10,6 +10,7 @@ import { PREF, usePref } from '@/lib/prefs';
 import type { Entry } from '@/lib/types';
 import { colors, defaultEmoji, space } from '@/theme';
 import { CommentBadge, CommentBox, CommentsModal } from '../comments';
+import { MoreButton, PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
 import { Card, EmojiTile, ErrorText, Loading } from '../ui';
 import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
@@ -69,19 +70,21 @@ export function ExpensesTab({ detail, month, onMonth }: {
   const openItem = (params: Record<string, string>) =>
     router.push({ pathname: '/g/[id]/item', params: { id: detail.group.id, ...params } });
 
-  function actions(e: Entry) {
+  // Menu rápido do item (⋮ ou toque longo), flutuando ao lado do botão.
+  const [menu, setMenu] = useState<{ entry: Entry; anchor: Anchor } | null>(null);
+  function menuItems(e: Entry): MenuItem[] {
     const del = (scope: 'one' | 'following') => remove.mutate({ entryId: e.id, scope });
-    const deleteButtons = e.recurrence_id
-      ? [{ text: 'Excluir só este', onPress: () => del('one') },
-         { text: 'Excluir este e os próximos', style: 'destructive' as const, onPress: () => del('following') }]
-      : [{ text: 'Excluir', style: 'destructive' as const, onPress: () => del('one') }];
-    Alert.alert(e.title, undefined, [
-      { text: 'Comentar', onPress: () => setCommentFor(e) },
-      { text: 'Duplicar', onPress: () => openItem({ duplicateOf: e.id }) },
-      ...deleteButtons,
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
+    return [
+      { emoji: '💬', label: 'Comentar', onPress: () => setCommentFor(e) },
+      { emoji: '✏️', label: 'Editar', onPress: () => openItem({ entryId: e.id }) },
+      { emoji: '📋', label: 'Duplicar', onPress: () => openItem({ duplicateOf: e.id }) },
+      ...(e.recurrence_id
+        ? [{ emoji: '🗑️', label: 'Excluir só este', destructive: true, confirm: 'Excluir só este?', onPress: () => del('one') },
+           { emoji: '🗑️', label: 'Excluir este e próximos', destructive: true, confirm: 'Excluir este e os próximos?', onPress: () => del('following') }]
+        : [{ emoji: '🗑️', label: 'Excluir', destructive: true, confirm: `Excluir "${e.title.slice(0, 18)}"?`, onPress: () => del('one') }]),
+    ];
   }
+
 
   const withComments = visible.filter((e) => commentsOf(e.id).length > 0).length;
 
@@ -109,6 +112,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
               </Pressable>
             </View>
           ) : null}
+          <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
           {withComments > 0 ? (
             <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
               accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
@@ -119,9 +123,6 @@ export function ExpensesTab({ detail, month, onMonth }: {
               <Text style={{ fontSize: 12 }}>💬</Text>
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.noteInk }}>Comentários ({withComments})</Text>
             </Pressable>
-          ) : null}
-          {list.length > 0 ? (
-            <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para comentar, duplicar ou excluir</Text>
           ) : null}
           {entries.isLoading ? <Loading /> : null}
           <ErrorText>{entries.error?.message}</ErrorText>
@@ -141,7 +142,8 @@ export function ExpensesTab({ detail, month, onMonth }: {
         const notes = commentsOf(e.id);
         return (
         <View style={{ gap: space.xs }}>
-        <Card onPress={() => openItem({ entryId: e.id })} onLongPress={() => actions(e)}
+        <Card onPress={() => openItem({ entryId: e.id })}
+          onLongPress={(ev) => setMenu({ entry: e, anchor: { x: ev.nativeEvent.pageX - 180, y: ev.nativeEvent.pageY, width: 180, height: 0 } })}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12 }}>
           <EmojiTile emoji={emojiOf(e)} size={35} />
           <View style={{ flex: 1, gap: 2 }}>
@@ -156,12 +158,14 @@ export function ExpensesTab({ detail, month, onMonth }: {
           <Text style={{ fontSize: 15, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
             {formatBRL(e.amount_cents)}
           </Text>
+          <MoreButton label={`Ações de ${e.title}`} onOpen={(anchor) => setMenu({ entry: e, anchor })} />
         </Card>
         {showComments && notes.length ? <CommentBox comments={notes} members={detail.allMembers} onPress={() => setCommentFor(e)} /> : null}
         </View>
         );
       }}
     />
+    <PopoverMenu anchor={menu?.anchor ?? null} items={menu ? menuItems(menu.entry) : []} onClose={() => setMenu(null)} />
     <CommentsModal visible={!!commentFor} onClose={() => setCommentFor(null)} groupId={detail.group.id}
       entryId={commentFor?.id ?? null} title={commentFor?.title ?? ''} comments={commentFor ? commentsOf(commentFor.id) : []}
       members={detail.allMembers} myMemberId={me?.id} />
