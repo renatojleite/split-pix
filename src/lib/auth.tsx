@@ -45,6 +45,31 @@ export async function sendCode(email: string) {
   if (error) throw error;
 }
 
+/** Entra com e-mail e senha (sem envio de e-mail). */
+export async function signInWithPassword(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  if (error) throw error;
+}
+
+/**
+ * Cria a conta com e-mail e senha. Com "Confirm email" desligado no Supabase,
+ * já volta logado; se vier sem sessão, a confirmação por e-mail ainda está ligada.
+ */
+export async function signUpWithPassword(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password });
+  if (error) throw error;
+  if (!data.session) {
+    // E-mail já cadastrado (o Supabase não revela) ou confirmação por e-mail ligada.
+    throw new Error('Esse e-mail já tem conta. Use "Entrar" com a sua senha.');
+  }
+}
+
+/** Define ou troca a senha de quem já está logado (não manda e-mail). */
+export async function setPassword(password: string) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 /** Lê a sessão do link do e-mail (#access_token=…, ?code=… ou ?token_hash=…). */
 export async function sessionFromUrl(url: string): Promise<boolean> {
   const params = new URLSearchParams();
@@ -99,6 +124,10 @@ export function authError(e: unknown, fallback: string): string {
     return 'Muitos códigos pedidos em pouco tempo. Use o último código que chegou no seu e-mail ou tente de novo em alguns minutos.';
   }
   if (/expired|invalid.*(otp|token)|token.*(expired|invalid)/i.test(m)) return 'Código inválido ou vencido. Peça um novo.';
+  if (/invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos. Se sua conta é antiga (entrava por código), defina a senha primeiro — veja abaixo.';
+  if (/password.*(at least|short|6)/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/already registered|already exists/i.test(m)) return 'Esse e-mail já tem conta. Use "Entrar" com a sua senha.';
+  if (/same.*password|different from the old/i.test(m)) return 'A nova senha precisa ser diferente da atual.';
   if (/fetch|network/i.test(m)) return 'Sem conexão. Tente de novo.';
   if (/invalid.*email|email.*invalid/i.test(m)) return 'E-mail inválido.';
   return m || fallback;
