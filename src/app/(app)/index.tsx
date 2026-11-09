@@ -16,7 +16,7 @@ import { describeMyBalance } from '@/lib/describe';
 import { PREF, usePref } from '@/lib/prefs';
 import { colors, space, type } from '@/theme';
 
-const ROW = 70; // altura fixa do cartão de grupo (a lista arrastável precisa)
+const ROW = 77; // altura fixa do cartão de grupo (a lista arrastável precisa)
 
 /** Ordem salva primeiro; grupos novos (fora da ordem) vão para o topo, mais recentes antes. */
 function applyOrder(groups: GroupSummary[], order: string[]): GroupSummary[] {
@@ -57,17 +57,17 @@ export default function Home() {
       <ScrollView scrollEnabled={!dragging}
         contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: space.xxxl, gap: space.lg }}
         refreshControl={<RefreshControl refreshing={groups.isRefetching} onRefresh={() => { groups.refetch(); }} />}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 51 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Logo size={29} />
-            <Text style={{ fontSize: 21, fontWeight: '700', color: colors.text, letterSpacing: -0.4 }}>split·pix</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 56 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+            <Logo size={32} />
+            <Text style={{ fontSize: 23, fontWeight: '700', color: colors.text, letterSpacing: -0.4 }}>split·pix</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            {checking ? <View style={{ width: 35, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /></View>
+            {checking ? <View style={{ width: 38, alignItems: 'center' }}><ActivityIndicator color={colors.primary} /></View>
               : <IconButton name="more" label="Mais opções" onPress={() => setMenuOpen(true)} />}
             <Pressable accessibilityRole="button" accessibilityLabel="Perfil" onPress={() => router.push('/perfil')}
-              style={{ width: 35, height: 35, borderRadius: 18, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primaryInk }}>{initial}</Text>
+              style={{ width: 38, height: 38, borderRadius: 20, backgroundColor: '#E0E7FF', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.primaryInk }}>{initial}</Text>
             </Pressable>
           </View>
         </View>
@@ -81,7 +81,7 @@ export default function Home() {
         <ErrorText>{groups.error?.message}</ErrorText>
 
         {list.length > 1 ? (
-          <Text style={{ fontSize: 11, color: colors.muted, marginBottom: -space.sm }}>Arraste pelo ≡ para mudar a ordem.</Text>
+          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: -space.sm }}>Arraste pelo ≡ para mudar a ordem.</Text>
         ) : null}
         <SortableList key={list.map((g) => g.id).join(',')} items={list} rowHeight={ROW} gap={space.lg}
           onReorder={reorder} onDragging={setDragging}
@@ -90,19 +90,19 @@ export default function Home() {
             return (
               <Card onPress={() => router.push({ pathname: '/g/[id]', params: { id: g.id } })}
                 onLongPress={() => groupActions(g.id, g.name)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 11, height: ROW, paddingVertical: 0, paddingRight: 3, borderRadius: 19 }}>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: ROW, paddingVertical: 0, paddingRight: 3, borderRadius: 21 }}>
                 <EmojiTile emoji={g.emoji} />
                 <View style={{ flex: 1, gap: 3 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }} numberOfLines={1}>{g.name}</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text }} numberOfLines={1}>{g.name}</Text>
                   <Text numberOfLines={1} style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: status.tone === 'neutral' ? '400' : '600',
                     color: status.tone === 'positive' ? colors.positive : status.tone === 'negative' ? colors.negative : colors.muted,
                   }}>{status.text}</Text>
                 </View>
                 {handle(
-                  <View accessibilityLabel={`Arrastar ${g.name}`} style={{ width: 38, height: ROW, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="grip" size={18} color={colors.muted} />
+                  <View accessibilityLabel={`Arrastar ${g.name}`} style={{ width: 42, height: ROW, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="grip" size={20} color={colors.muted} />
                   </View>,
                 )}
               </Card>
@@ -110,17 +110,17 @@ export default function Home() {
           }} />
 
         {!groups.isLoading && list.length === 0 && !showArchived ? (
-          <View style={{ alignItems: 'center', gap: 6, paddingVertical: 38 }}>
+          <View style={{ alignItems: 'center', gap: 7, paddingVertical: 42 }}>
             <Text style={type.title}>Nenhum grupo ainda</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center' }}>
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
               Crie um grupo com seu par ou entre num grupo com o código que te mandaram.
             </Text>
           </View>
         ) : null}
 
         {archivedCount > 0 || showArchived ? (
-          <Pressable onPress={() => setShowArchived((v) => !v)} style={{ alignSelf: 'center', padding: 10 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>
+          <Pressable onPress={() => setShowArchived((v) => !v)} style={{ alignSelf: 'center', padding: 11 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
               {showArchived ? 'Voltar aos grupos ativos' : `Grupos arquivados (${archivedCount})`}
             </Text>
           </Pressable>
@@ -131,7 +131,7 @@ export default function Home() {
         <Button title="Participar" icon="qr" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/participar')} />
         <Button title="Novo grupo" icon="plus" style={{ flex: 1 }} onPress={() => router.push('/novo-grupo')} />
       </View>
-      <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center', paddingBottom: space.sm, opacity: 0.8 }}>
+      <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', paddingBottom: space.sm, opacity: 0.8 }}>
         split·pix {versionLabel()}
       </Text>
 
@@ -167,7 +167,7 @@ function AskName({ userId }: { userId: string }) {
   const save = useUpdateProfileName(userId);
   return (
     <Card style={{ gap: space.md, backgroundColor: colors.primarySoft }}>
-      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primaryInk }}>Como quer ser chamado nos grupos?</Text>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primaryInk }}>Como quer ser chamado nos grupos?</Text>
       <Input value={name} onChangeText={setName} placeholder="Seu nome" style={{ backgroundColor: colors.surface }} />
       <Button title="Salvar" onPress={() => save.mutate(name)} disabled={!name.trim()} loading={save.isPending} />
     </Card>

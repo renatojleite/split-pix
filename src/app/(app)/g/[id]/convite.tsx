@@ -48,14 +48,14 @@ export default function ConviteScreen() {
     </>}>
       <Header title="Convidar" />
       <View style={{ alignItems: 'center', gap: space.xl, paddingTop: space.lg }}>
-        <Text style={{ fontSize: 13, color: colors.muted, textAlign: 'center' }}>
+        <Text style={{ fontSize: 14, color: colors.muted, textAlign: 'center' }}>
           Peça para a outra pessoa abrir o split-pix, tocar em Participar e ler este QR — ou digitar o código.
         </Text>
-        <View style={{ padding: 16, backgroundColor: '#FFFFFF', borderRadius: 19, borderWidth: 1, borderColor: colors.divider }}>
-          <QRCode value={inviteLink(g.invite_code)} size={176} color={colors.text} backgroundColor="#FFFFFF" />
+        <View style={{ padding: 18, backgroundColor: '#FFFFFF', borderRadius: 21, borderWidth: 1, borderColor: colors.divider }}>
+          <QRCode value={inviteLink(g.invite_code)} size={194} color={colors.text} backgroundColor="#FFFFFF" />
         </View>
-        <Text selectable style={{ fontSize: 29, fontWeight: '700', letterSpacing: 6.4, color: colors.text }}>{g.invite_code}</Text>
-        <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted, textAlign: 'center' }}>
+        <Text selectable style={{ fontSize: 32, fontWeight: '700', letterSpacing: 7, color: colors.text }}>{g.invite_code}</Text>
+        <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted, textAlign: 'center' }}>
           Ao compartilhar, a mensagem já leva o link para baixar o app, para quem ainda não tem.
         </Text>
         <ErrorText>{regenerate.error?.message}</ErrorText>

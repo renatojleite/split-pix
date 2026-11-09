@@ -76,7 +76,7 @@ function GroupForm({ detail }: { detail: GroupDetail }) {
       <Header title="Editar grupo" />
 
       <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'flex-end' }}>
-        <EmojiTile emoji={emoji} size={45} onPress={isOwner ? () => setPicking(true) : undefined} label="Emoji do grupo" />
+        <EmojiTile emoji={emoji} size={50} onPress={isOwner ? () => setPicking(true) : undefined} label="Emoji do grupo" />
         <View style={{ flex: 1 }}>
           <Field label="Nome do grupo">
             <Input value={name} onChangeText={setName} maxLength={40} placeholder="Ex.: Casa" editable={isOwner} />
@@ -84,9 +84,9 @@ function GroupForm({ detail }: { detail: GroupDetail }) {
         </View>
       </View>
       {isOwner ? (
-        <Text style={{ fontSize: 11, color: colors.muted }}>Toque no emoji para trocar. Muda para todos do grupo.</Text>
+        <Text style={{ fontSize: 12, color: colors.muted }}>Toque no emoji para trocar. Muda para todos do grupo.</Text>
       ) : (
-        <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
+        <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
           Só {owner?.display_name ?? 'quem criou o grupo'} pode mudar nome e emoji, arquivar ou excluir.
         </Text>
       )}
@@ -95,7 +95,7 @@ function GroupForm({ detail }: { detail: GroupDetail }) {
       {isOwner ? (
         <View style={{ gap: space.sm, paddingTop: space.xl }}>
           <Button title={archived ? 'Desarquivar grupo' : 'Arquivar grupo'} variant="secondary" onPress={toggleArchive} />
-          <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted, textAlign: 'center' }}>
+          <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted, textAlign: 'center' }}>
             {archived ? 'Arquivado: fora da lista principal e sem convite.' : 'Arquivar esconde o grupo sem apagar nada.'}
           </Text>
           <Button title="Excluir grupo" variant="danger" icon="trash" onPress={confirmDelete} loading={remove.isPending}

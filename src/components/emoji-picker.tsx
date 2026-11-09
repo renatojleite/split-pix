@@ -40,7 +40,7 @@ export function EmojiPicker({ visible, onClose, onPick, title = 'Escolha um emoj
       <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
       <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '75%' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: space.xl, paddingBottom: space.sm }}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{title}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{title}</Text>
           <Pressable onPress={onClose} accessibilityLabel="Fechar" hitSlop={10}><Icon name="close" /></Pressable>
         </View>
         <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: space.xl, gap: space.md }}
@@ -48,17 +48,17 @@ export function EmojiPicker({ visible, onClose, onPick, title = 'Escolha um emoj
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
             <TextInput value={typed} onChangeText={setTyped} placeholder="Ou digite um emoji do teclado"
               placeholderTextColor={colors.muted}
-              style={{ flex: 1, height: 38, borderRadius: 11, backgroundColor: colors.card, paddingHorizontal: 11, fontSize: 14, color: colors.text }} />
+              style={{ flex: 1, height: 42, borderRadius: 12, backgroundColor: colors.card, paddingHorizontal: 12, fontSize: 15, color: colors.text }} />
             <Pressable disabled={!typed.trim()} onPress={() => pick(firstGrapheme(typed.trim()))}
-              style={{ height: 38, paddingHorizontal: 13, borderRadius: 11, backgroundColor: typed.trim() ? colors.primary : colors.card, justifyContent: 'center' }}>
+              style={{ height: 42, paddingHorizontal: 14, borderRadius: 12, backgroundColor: typed.trim() ? colors.primary : colors.card, justifyContent: 'center' }}>
               <Text style={{ color: typed.trim() ? '#FFFFFF' : colors.muted, fontWeight: '600' }}>Usar</Text>
             </Pressable>
           </View>
           {SECTIONS.map((sec) => (
-            <View key={sec.title} style={{ gap: 5 }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>{sec.title}</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                {sec.emojis.map((e) => <EmojiTile key={sec.title + e} emoji={e} size={42} onPress={() => pick(e)} label={e} />)}
+            <View key={sec.title} style={{ gap: 6 }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.9 }}>{sec.title}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {sec.emojis.map((e) => <EmojiTile key={sec.title + e} emoji={e} size={46} onPress={() => pick(e)} label={e} />)}
               </View>
             </View>
           ))}

@@ -36,7 +36,7 @@ export function SummaryTab({ detail, month, onMonth }: {
   const s = summarize(source.data, members, categories);
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 38, gap: space.md, paddingTop: space.sm }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 42, gap: space.md, paddingTop: space.sm }}>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         <Chip label="Acumulado" selected={scope === 'all'} onPress={() => setScope('all')} />
         <Chip label="Por mês" selected={scope === 'month'} onPress={() => setScope('month')} />
@@ -56,13 +56,13 @@ export function SummaryTab({ detail, month, onMonth }: {
       </View>
 
       {s.transfers.length ? (
-        <Card style={{ gap: 5 }}>
+        <Card style={{ gap: 6 }}>
           {s.transfers.map((t, i) => (
-            <Text key={i} style={{ fontSize: 12, color: colors.text }}>
+            <Text key={i} style={{ fontSize: 13, color: colors.text }}>
               {name(t.from)} → {name(t.to)}: <Text style={{ fontWeight: '700' }}>{formatBRL(t.cents)}</Text>
             </Text>
           ))}
-          <Text style={{ fontSize: 11, color: colors.muted }}>Acerte pela aba Saldos.</Text>
+          <Text style={{ fontSize: 12, color: colors.muted }}>Acerte pela aba Saldos.</Text>
         </Card>
       ) : null}
 
@@ -70,11 +70,11 @@ export function SummaryTab({ detail, month, onMonth }: {
       {shownPeople(s.people, members).map((p) => {
         const m = members.find((x) => x.id === p.memberId)!;
         return (
-          <Card key={p.memberId} style={{ gap: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Avatar name={m.display_name} color={m.color} size={29} />
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.text }}>{m.display_name}</Text>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted }}>
+          <Card key={p.memberId} style={{ gap: 9 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+              <Avatar name={m.display_name} color={m.color} size={32} />
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: colors.text }}>{m.display_name}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted }}>
                 {formatBRL(p.balance, { sign: true })}
               </Text>
             </View>
@@ -90,22 +90,22 @@ export function SummaryTab({ detail, month, onMonth }: {
 
       <SectionTitle>Por categoria</SectionTitle>
       {s.categories.length === 0 ? (
-        <Text style={{ fontSize: 12, color: colors.muted }}>Nenhum gasto {scope === 'month' ? 'neste mês' : 'ainda'}.</Text>
+        <Text style={{ fontSize: 13, color: colors.muted }}>Nenhum gasto {scope === 'month' ? 'neste mês' : 'ainda'}.</Text>
       ) : (
         <Card style={{ padding: 0 }}>
           {s.categories.map((c, i) => (
-            <View key={c.categoryId ?? 'none'} style={{ padding: space.lg, gap: 6,
+            <View key={c.categoryId ?? 'none'} style={{ padding: space.lg, gap: 7,
               borderBottomWidth: i === s.categories.length - 1 ? 0 : 1, borderColor: colors.divider }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <EmojiTile emoji={c.emoji} size={26} />
-                <Text style={{ flex: 1, fontSize: 12, fontWeight: '600', color: colors.text }}>{c.name}</Text>
-                <Text style={{ fontSize: 11, color: colors.muted }}>{Math.round(c.ratio * 100)}%</Text>
-                <Text style={{ width: 83, textAlign: 'right', fontSize: 12, fontWeight: '700', color: colors.text }}>{formatBRL(c.cents)}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                <EmojiTile emoji={c.emoji} size={29} />
+                <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: colors.text }}>{c.name}</Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>{Math.round(c.ratio * 100)}%</Text>
+                <Text style={{ width: 91, textAlign: 'right', fontSize: 13, fontWeight: '700', color: colors.text }}>{formatBRL(c.cents)}</Text>
               </View>
               {/* Barra do tamanho da categoria no total, colorida por quem arca com ela. */}
-              <View style={{ paddingLeft: 34 }}>
+              <View style={{ paddingLeft: 37 }}>
                 <View style={{ width: `${Math.max(4, Math.round(c.ratio * 100))}%` }}>
-                  <SplitBar parts={members.map((m) => ({ color: m.color, bp: c.byMember[m.id] ?? 0 }))} height={6} />
+                  <SplitBar parts={members.map((m) => ({ color: m.color, bp: c.byMember[m.id] ?? 0 }))} height={7} />
                 </View>
               </View>
             </View>
@@ -114,9 +114,9 @@ export function SummaryTab({ detail, month, onMonth }: {
       )}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>
         {members.map((m) => (
-          <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: m.color }} />
-            <Text style={{ fontSize: 11, color: colors.muted }}>parte de {m.display_name}</Text>
+          <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 9, height: 9, borderRadius: 4, backgroundColor: m.color }} />
+            <Text style={{ fontSize: 12, color: colors.muted }}>parte de {m.display_name}</Text>
           </View>
         ))}
       </View>
@@ -127,8 +127,8 @@ export function SummaryTab({ detail, month, onMonth }: {
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'positive' | 'negative' }) {
   return (
     <Card style={{ flex: 1, gap: 3, padding: space.md }}>
-      <Text style={{ fontSize: 11, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 15, fontWeight: '700', color: tone === 'positive' ? colors.positive : tone === 'negative' ? colors.negative : colors.text }}
+      <Text style={{ fontSize: 12, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 16, fontWeight: '700', color: tone === 'positive' ? colors.positive : tone === 'negative' ? colors.negative : colors.text }}
         adjustsFontSizeToFit numberOfLines={1}>{value}</Text>
     </Card>
   );
@@ -136,7 +136,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'po
 
 function Detail({ label, value, signed }: { label: string; value: number; signed?: boolean }) {
   return (
-    <Text style={{ fontSize: 11, color: colors.muted }}>
+    <Text style={{ fontSize: 12, color: colors.muted }}>
       {label} <Text style={{ color: colors.textSoft, fontWeight: '600' }}>{formatBRL(value, { sign: signed })}</Text>
     </Text>
   );

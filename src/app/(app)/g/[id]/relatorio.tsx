@@ -79,7 +79,7 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
         { value: 'summary', label: 'Resumido' },
         { value: 'statement', label: 'Extrato completo' },
       ]} />
-      <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
+      <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
         {kind === 'summary'
           ? 'Números, saldo de cada pessoa, categorias, quem deve a quem (com o Pix no valor) e as chaves Pix.'
           : 'Tudo do resumido mais a lista de todos os lançamentos, com data, valor e quem pagou.'}
@@ -92,7 +92,7 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
       {scope === 'month' ? <MonthNav month={month} onMonth={setMonth} /> : null}
 
       {missingPix.length ? (
-        <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
+        <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
           Sem chave Pix no grupo: {missingPix.join(', ')}. Aparece como (ausente). Cadastre em Divisão › Participantes.
         </Text>
       ) : null}
@@ -100,23 +100,23 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
       {pending.some((t) => t.code) ? (
         <Card style={{ gap: space.md }}>
           <View style={{ gap: 2 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>Pix das pendências</Text>
-            <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>Pix das pendências</Text>
+            <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
               No WhatsApp, segurar a mensagem copia ela inteira. Para colar no banco, envie o código sozinho
               (quem recebe segura e copia) ou copie aqui.
             </Text>
           </View>
           {pending.filter((t) => t.code).map((t, i) => (
-            <View key={`${t.from}-${t.to}`} style={{ gap: 6, paddingTop: i ? space.md : 0,
+            <View key={`${t.from}-${t.to}`} style={{ gap: 7, paddingTop: i ? space.md : 0,
               borderTopWidth: i ? 1 : 0, borderColor: colors.divider }}>
-              <Text style={{ fontSize: 12, color: colors.text }}>
+              <Text style={{ fontSize: 13, color: colors.text }}>
                 {t.fromName} → {t.toName} · <Text style={{ fontWeight: '700' }}>{formatBRL(t.cents)}</Text>
               </Text>
               <View style={{ flexDirection: 'row', gap: space.sm }}>
                 <Button title={copied === t.code ? 'Copiado ✓' : 'Copiar código'} icon="copy" variant="secondary"
-                  onPress={() => copy(t.code!, t.code!)} style={{ flex: 1, height: 35 }} />
+                  onPress={() => copy(t.code!, t.code!)} style={{ flex: 1, height: 38 }} />
                 <Button title="Enviar só o código" variant="secondary" onPress={() => whatsapp(t.code!)}
-                  style={{ flex: 1, height: 35 }} />
+                  style={{ flex: 1, height: 38 }} />
               </View>
             </View>
           ))}
@@ -125,9 +125,9 @@ function ReportForm({ params, detail }: { params: Params; detail: GroupDetail })
 
       {source.error ? <ErrorText>{source.error.message}</ErrorText> : null}
       {!source.data ? <Loading /> : (
-        <Card style={{ gap: 5 }}>
-          <Text style={{ fontSize: 11, color: colors.muted }}>Prévia</Text>
-          <Text selectable style={{ fontSize: 11, lineHeight: 16, color: colors.text }}>
+        <Card style={{ gap: 6 }}>
+          <Text style={{ fontSize: 12, color: colors.muted }}>Prévia</Text>
+          <Text selectable style={{ fontSize: 12, lineHeight: 18, color: colors.text }}>
             {text}
           </Text>
         </Card>

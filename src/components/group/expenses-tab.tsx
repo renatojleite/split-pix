@@ -2,12 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
 
-import { useDeleteEntry, useEntries, type GroupDetail } from '@/lib/api';
+import { useComments, useDeleteEntry, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayLabel } from '@/lib/dates';
 import { formatBRL, formatPercent } from '@/lib/money';
+import { PREF, usePref } from '@/lib/prefs';
 import type { Entry } from '@/lib/types';
 import { colors, defaultEmoji, space } from '@/theme';
+import { CommentBadge, CommentBox, CommentsModal } from '../comments';
 import { Card, EmojiTile, ErrorText, Loading } from '../ui';
 import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
@@ -23,6 +25,10 @@ export function ExpensesTab({ detail, month, onMonth }: {
   const category = (id: string | null) => detail.categories.find((c) => c.id === id);
 
   const list = entries.data ?? [];
+  const comments = useComments(detail.group.id).data;
+  const commentsOf = (id: string) => comments?.get(id) ?? [];
+  const [showComments, setShowComments] = usePref<boolean>(PREF.commentsOpen, false);
+  const [commentFor, setCommentFor] = useState<Entry | null>(null);
   // Dia escolhido no calendário; vale só enquanto o mês mostrado é o mesmo.
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const day = pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
@@ -73,19 +79,23 @@ export function ExpensesTab({ detail, month, onMonth }: {
          { text: 'Excluir este e os próximos', style: 'destructive' as const, onPress: () => del('following') }]
       : [{ text: 'Excluir', style: 'destructive' as const, onPress: () => del('one') }];
     Alert.alert(e.title, undefined, [
+      { text: 'Comentar', onPress: () => setCommentFor(e) },
       { text: 'Duplicar', onPress: () => openItem({ duplicateOf: e.id }) },
       ...deleteButtons,
       { text: 'Cancelar', style: 'cancel' },
     ]);
   }
 
+  const withComments = visible.filter((e) => commentsOf(e.id).length > 0).length;
+
   return (
+    <>
     <SectionList
       sections={sections}
       keyExtractor={(e) => e.id}
       stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={entries.isRefetching} onRefresh={() => { entries.refetch(); }} />}
-      contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 96, gap: space.sm }}
+      contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 106, gap: space.sm }}
       ListHeaderComponent={
         <View style={{ gap: space.md, paddingTop: space.sm }}>
           <MonthNav month={month} onMonth={onMonth} />
@@ -96,17 +106,28 @@ export function ExpensesTab({ detail, month, onMonth }: {
           <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
           <CalendarBlock month={month} entries={list} selected={day} onSelect={setPickedDay} />
           {day ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 11, backgroundColor: colors.primarySoft }}>
-              <Text style={{ flex: 1, fontSize: 11, color: colors.primaryInk }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 12, backgroundColor: colors.primarySoft }}>
+              <Text style={{ flex: 1, fontSize: 12, color: colors.primaryInk }}>
                 Mostrando só <Text style={{ fontWeight: '700' }}>{dayLabel(day)}</Text> · {visible.length} {visible.length === 1 ? 'lançamento' : 'lançamentos'}
               </Text>
               <Pressable onPress={() => setPickedDay(null)} hitSlop={10} accessibilityRole="button">
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
               </Pressable>
             </View>
           ) : null}
+          {withComments > 0 ? (
+            <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="button"
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'flex-start',
+                paddingHorizontal: space.md, paddingVertical: 7, borderRadius: 15, borderWidth: 1, borderColor: colors.noteBorder,
+                backgroundColor: pressed || showComments ? colors.noteBorder : colors.note })}>
+              <Text style={{ fontSize: 13 }}>💬</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.noteInk }}>
+                {showComments ? 'Fechar todos os comentários' : `Expandir todos os comentários (${withComments})`}
+              </Text>
+            </Pressable>
+          ) : null}
           {list.length > 0 ? (
-            <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para duplicar ou excluir</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center' }}>Toque e segure um item para comentar, duplicar ou excluir</Text>
           ) : null}
           {entries.isLoading ? <Loading /> : null}
           <ErrorText>{entries.error?.message}</ErrorText>
@@ -114,38 +135,51 @@ export function ExpensesTab({ detail, month, onMonth }: {
       }
       ListEmptyComponent={
         entries.isLoading ? undefined : (
-          <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 12, paddingVertical: 32 }}>
+          <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 13, paddingVertical: 35 }}>
             {day ? 'Nenhum lançamento neste dia.' : 'Nenhum lançamento neste mês.'}
           </Text>
         )
       }
       renderSectionHeader={({ section }) => (
-        <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSoft, paddingTop: space.md }}>{section.title}</Text>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSoft, paddingTop: space.md }}>{section.title}</Text>
       )}
-      renderItem={({ item: e }) => (
+      renderItem={({ item: e }) => {
+        const notes = commentsOf(e.id);
+        return (
+        <View style={{ gap: space.xs }}>
         <Card onPress={() => openItem({ entryId: e.id })} onLongPress={() => actions(e)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11 }}>
-          <EmojiTile emoji={emojiOf(e)} size={32} />
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12 }}>
+          <EmojiTile emoji={emojiOf(e)} size={35} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }} numberOfLines={1}>{e.title}</Text>
-            <Text style={{ fontSize: 11, color: colors.muted }} numberOfLines={1}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colors.text }} numberOfLines={1}>{e.title}</Text>
+              {notes.length ? <CommentBadge count={notes.length} onPress={() => setCommentFor(e)} /> : null}
+            </View>
+            <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>
               {e.recurrence_total ? `🔁 ${e.recurrence_index}/${e.recurrence_total} · ` : ''}{subtitle(e)}
             </Text>
           </View>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
             {formatBRL(e.amount_cents)}
           </Text>
         </Card>
-      )}
+        {showComments && notes.length ? <CommentBox comments={notes} members={detail.allMembers} onPress={() => setCommentFor(e)} /> : null}
+        </View>
+        );
+      }}
     />
+    <CommentsModal visible={!!commentFor} onClose={() => setCommentFor(null)} groupId={detail.group.id}
+      entryId={commentFor?.id ?? null} title={commentFor?.title ?? ''} comments={commentFor ? commentsOf(commentFor.id) : []}
+      members={detail.allMembers} myMemberId={me?.id} />
+    </>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 3 }}>
-      <Text style={{ fontSize: 11, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{value}</Text>
+      <Text style={{ fontSize: 12, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text }}>{value}</Text>
     </View>
   );
 }

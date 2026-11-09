@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { addMonths } from './dates';
 import { supabase } from './supabase';
 import type {
-  Balance, Category, Entry, EntryType, Group, InvitePreview, Member, Profile, RepeatEvery, Rule, SplitMode,
+  Balance, Category, Entry, EntryComment, EntryType, Group, InvitePreview, Member, Profile, RepeatEvery, Rule, SplitMode,
 } from './types';
 
 const keys = {
@@ -16,6 +16,7 @@ const keys = {
   entries: (id: string, month: string) => ['group', id, 'entries', month] as const,
   entry: (id: string, entryId: string) => ['group', id, 'entry', entryId] as const,
   balances: (id: string) => ['group', id, 'balances'] as const,
+  comments: (id: string) => ['group', id, 'comments'] as const,
 };
 
 function must<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -459,10 +460,52 @@ export function useGroupRealtime(groupId: string) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'split_rules', filter }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'entry_comments', filter }, refresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'groups', filter: `id=eq.${groupId}` }, refresh)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [groupId, qc]);
+}
+
+// ── Comentários ──────────────────────────────────────────────────────────
+
+/** Comentários ativos do grupo, por lançamento (mais antigo primeiro). Volume pequeno: busca o grupo todo. */
+export function useComments(groupId: string) {
+  return useQuery({
+    queryKey: keys.comments(groupId),
+    queryFn: async () => {
+      const rows = must(await supabase
+        .from('entry_comments')
+        .select('id, entry_id, group_id, author_member_id, body, created_at')
+        .eq('group_id', groupId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })) as EntryComment[];
+      const byEntry = new Map<string, EntryComment[]>();
+      for (const c of rows) {
+        const list = byEntry.get(c.entry_id) ?? [];
+        list.push(c);
+        byEntry.set(c.entry_id, list);
+      }
+      return byEntry;
+    },
+  });
+}
+
+export function useAddComment(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entryId, body }: { entryId: string; body: string }) =>
+      must(await supabase.rpc('add_entry_comment', { p_entry_id: entryId, p_body: body.trim() })) as string,
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.comments(groupId) }),
+  });
+}
+
+export function useRemoveComment(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => must(await supabase.rpc('remove_entry_comment', { p_id: id })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.comments(groupId) }),
+  });
 }

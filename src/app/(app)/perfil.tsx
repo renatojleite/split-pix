@@ -26,8 +26,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
         { text: 'Sair', style: 'destructive', onPress: () => signOut() },
       ])} />}>
       <Header title="Perfil" />
-      <View style={{ alignItems: 'center', gap: 10, paddingVertical: 6 }}>
-        <Avatar name={name || profile.email || '?'} color={colors.primary} size={70} />
+      <View style={{ alignItems: 'center', gap: 11, paddingVertical: 7 }}>
+        <Avatar name={name || profile.email || '?'} color={colors.primary} size={77} />
         <Text style={type.title}>{name || 'Sem nome'}</Text>
       </View>
       <Field label="Nome" hint="É como seu nome aparece nos grupos que você criar.">

@@ -8,7 +8,7 @@ export function MonthNav({ month, onMonth }: { month: string; onMonth: (m: strin
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
       <IconButton name="chevron-left" label="Mês anterior" onPress={() => onMonth(addMonths(month, -1))} />
-      <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{monthLabel(month)}</Text>
+      <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{monthLabel(month)}</Text>
       <IconButton name="chevron-right" label="Próximo mês" onPress={() => onMonth(addMonths(month, 1))} />
     </View>
   );

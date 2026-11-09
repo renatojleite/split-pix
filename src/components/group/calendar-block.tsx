@@ -32,14 +32,14 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
   return (
     <Card style={{ padding: 0 }}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.lg, minHeight: 42 }}>
-        <Icon name="calendar" size={14} color={colors.primary} />
-        <Text style={{ flex: 1, fontSize: 12, fontWeight: '700', color: colors.text }}>Calendário</Text>
-        <Text style={{ fontSize: 11, color: colors.muted }}>
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: space.lg, minHeight: 46 }}>
+        <Icon name="calendar" size={15} color={colors.primary} />
+        <Text style={{ flex: 1, fontSize: 13, fontWeight: '700', color: colors.text }}>Calendário</Text>
+        <Text style={{ fontSize: 12, color: colors.muted }}>
           {daysWithEntries ? `${daysWithEntries} ${daysWithEntries === 1 ? 'dia' : 'dias'} com lançamento` : 'sem lançamentos'}
         </Text>
         <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
-          <Icon name="chevron-right" size={14} color={colors.muted} />
+          <Icon name="chevron-right" size={15} color={colors.muted} />
         </View>
       </Pressable>
 
@@ -47,13 +47,13 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
         <View style={{ borderTopWidth: 1, borderColor: colors.divider, paddingHorizontal: space.sm, paddingVertical: space.sm, gap: 2 }}>
           <View style={{ flexDirection: 'row' }}>
             {WEEKDAYS.map((w, i) => (
-              <Text key={i} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600', color: colors.muted }}>{w}</Text>
+              <Text key={i} style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: colors.muted }}>{w}</Text>
             ))}
           </View>
           {monthGrid(month).map((week, wi) => (
             <View key={wi} style={{ flexDirection: 'row' }}>
               {week.map((d, di) => {
-                if (!d) return <View key={di} style={{ flex: 1, height: 40 }} />;
+                if (!d) return <View key={di} style={{ flex: 1, height: 44 }} />;
                 const info = byDay.get(d);
                 const isSel = d === selected;
                 const has = !!info;
@@ -61,11 +61,11 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
                   <Pressable key={d} disabled={!has && !isSel} onPress={() => onSelect(isSel ? null : d)}
                     accessibilityRole="button" accessibilityState={{ selected: isSel, disabled: !has }}
                     accessibilityLabel={has ? `${dayLabel(d)}: ${info.count} lançamentos, ${formatBRL(info.spent)}` : dayLabel(d)}
-                    style={{ flex: 1, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-                    <View style={{ width: 32, height: 35, borderRadius: 10, alignItems: 'center', justifyContent: 'center', gap: 2,
+                    style={{ flex: 1, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 35, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center', gap: 2,
                       backgroundColor: isSel ? colors.primary : has ? colors.primarySoft : 'transparent',
                       borderWidth: d === t && !isSel ? 1.5 : 0, borderColor: colors.primary }}>
-                      <Text style={{ fontSize: 12, fontWeight: has || isSel ? '700' : '400',
+                      <Text style={{ fontSize: 13, fontWeight: has || isSel ? '700' : '400',
                         color: isSel ? '#FFFFFF' : has ? colors.primaryInk : colors.muted }}>
                         {Number(d.slice(8))}
                       </Text>
@@ -82,7 +82,7 @@ export function CalendarBlock({ month, entries, selected, onSelect }: {
               })}
             </View>
           ))}
-          <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center', paddingTop: 3 }}>
+          <Text style={{ fontSize: 12, color: colors.muted, textAlign: 'center', paddingTop: 3 }}>
             Toque num dia destacado para ver só os lançamentos dele.
           </Text>
         </View>

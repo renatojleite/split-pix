@@ -58,10 +58,10 @@ export default function Participar() {
       <Field label="Código do convite" hint="Peça o código para quem criou o grupo.">
         <Input value={code} onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
           placeholder="PX7K2M" autoCapitalize="characters" autoCorrect={false} maxLength={6}
-          style={{ height: 51, fontSize: 22, fontWeight: '700', letterSpacing: 8, textAlign: 'center' }} />
+          style={{ height: 56, fontSize: 24, fontWeight: '700', letterSpacing: 8.8, textAlign: 'center' }} />
       </Field>
       <ErrorText>{formatError ?? invite.error?.message}</ErrorText>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
         <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
         <Text style={{ color: colors.muted }}>ou</Text>
         <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
@@ -90,7 +90,7 @@ function Scanner({ onCode }: { onCode: (text: string) => void }) {
   }
 
   return (
-    <View style={{ height: 240, borderRadius: 19, overflow: 'hidden', backgroundColor: '#18181B' }}>
+    <View style={{ height: 264, borderRadius: 21, overflow: 'hidden', backgroundColor: '#18181B' }}>
       <CameraView style={{ flex: 1 }} facing="back"
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         onBarcodeScanned={(r: BarcodeScanningResult) => {
@@ -100,8 +100,8 @@ function Scanner({ onCode }: { onCode: (text: string) => void }) {
             onCode(r.data);
           }
         }} />
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 13, alignItems: 'center' }}>
-        <Text style={{ color: '#E4E4E7', fontSize: 11 }}>Aponte a câmera para o QR do grupo</Text>
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center' }}>
+        <Text style={{ color: '#E4E4E7', fontSize: 12 }}>Aponte a câmera para o QR do grupo</Text>
       </View>
     </View>
   );
@@ -123,11 +123,11 @@ function Claim({ invite, code, onBack }: { invite: InvitePreview; code: string; 
 
   return (
     <Screen footer={<Button title="Entrar no grupo" onPress={join} disabled={!valid} loading={accept.isPending} />}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 45 }}>
-        <Pressable onPress={onBack} hitSlop={8}><Text style={{ color: colors.primary, fontWeight: '600', fontSize: 13 }}>Outro código</Text></Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 50 }}>
+        <Pressable onPress={onBack} hitSlop={8}><Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Outro código</Text></Pressable>
       </View>
-      <View style={{ alignItems: 'center', gap: 10 }}>
-        <EmojiTile emoji={invite.emoji} size={58} />
+      <View style={{ alignItems: 'center', gap: 11 }}>
+        <EmojiTile emoji={invite.emoji} size={64} />
         <Text style={type.title}>{invite.name}</Text>
       </View>
       <Text style={type.label}>Quem é você neste grupo?</Text>
@@ -150,13 +150,13 @@ function Claim({ invite, code, onBack }: { invite: InvitePreview; code: string; 
 function Option({ label, selected, onPress, last }: { label: string; selected: boolean; onPress: () => void; last?: boolean }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="radio" accessibilityState={{ selected }}
-      style={{ height: 45, paddingHorizontal: space.lg, flexDirection: 'row', alignItems: 'center', gap: 10,
+      style={{ height: 50, paddingHorizontal: space.lg, flexDirection: 'row', alignItems: 'center', gap: 11,
         borderBottomWidth: last ? 0 : 1, borderColor: colors.divider }}>
-      <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: selected ? colors.primary : colors.muted,
+      <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: selected ? colors.primary : colors.muted,
         alignItems: 'center', justifyContent: 'center' }}>
-        {selected ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary }} /> : null}
+        {selected ? <View style={{ width: 9, height: 9, borderRadius: 4, backgroundColor: colors.primary }} /> : null}
       </View>
-      <Text style={{ fontSize: 13, color: colors.text }}>{label}</Text>
+      <Text style={{ fontSize: 14, color: colors.text }}>{label}</Text>
     </Pressable>
   );
 }

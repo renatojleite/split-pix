@@ -57,28 +57,28 @@ export default function Codigo() {
       <Screen scroll={false}
         footer={<Button title="Entrar" onPress={() => verify(code)} disabled={code.length !== LENGTH} loading={busy} />}>
         <Header />
-        <View style={{ gap: 6 }}>
+        <View style={{ gap: 7 }}>
           <Text style={type.screenTitle}>Confira seu e-mail</Text>
-          <Text style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>
+          <Text style={{ fontSize: 14, lineHeight: 21, color: colors.muted }}>
             Enviamos um e-mail para <Text style={{ color: colors.text, fontWeight: '600' }}>{email}</Text>.
             Abra neste celular e toque no link: o split-pix abre já conectado.
           </Text>
-          <Text style={{ fontSize: 11, lineHeight: 16, color: colors.muted }}>
+          <Text style={{ fontSize: 12, lineHeight: 18, color: colors.muted }}>
             Se o e-mail trouxer um código de 6 dígitos, digite abaixo.
           </Text>
         </View>
 
         {/* Um input invisível recebe os dígitos; as caixas só desenham. */}
         <Pressable onPress={() => input.current?.focus()} accessibilityLabel="Código de 6 dígitos"
-          style={{ flexDirection: 'row', gap: 6 }}>
+          style={{ flexDirection: 'row', gap: 7 }}>
           {Array.from({ length: LENGTH }, (_, i) => {
             const active = i === code.length;
             return (
               <View key={i} style={{
-                flex: 1, height: 48, borderRadius: 11, backgroundColor: active ? colors.surface : colors.card,
+                flex: 1, height: 53, borderRadius: 12, backgroundColor: active ? colors.surface : colors.card,
                 borderWidth: active ? 2 : 0, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ fontSize: 21, fontWeight: '600', color: colors.text }}>{code[i] ?? ''}</Text>
+                <Text style={{ fontSize: 23, fontWeight: '600', color: colors.text }}>{code[i] ?? ''}</Text>
               </View>
             );
           })}
@@ -90,16 +90,16 @@ export default function Codigo() {
         <ErrorText>{error}</ErrorText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
           {wait > 0 ? (
-            <Text style={{ fontSize: 12, color: colors.muted }}>
+            <Text style={{ fontSize: 13, color: colors.muted }}>
               Não chegou? Reenviar em 0:{wait.toString().padStart(2, '0')} ·{' '}
             </Text>
           ) : (
             <Pressable onPress={resend} hitSlop={8}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>Reenviar código · </Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>Reenviar código · </Text>
             </Pressable>
           )}
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>trocar e-mail</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>trocar e-mail</Text>
           </Pressable>
         </View>
         <View style={{ height: radius.card }} />

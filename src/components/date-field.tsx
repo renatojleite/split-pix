@@ -13,13 +13,13 @@ export function DateField({ value, onChange }: { value: string; onChange: (iso: 
   const [open, setOpen] = useState(false);
   return (
     <>
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: radius.input, height: 45 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: radius.input, height: 50 }}>
         <IconButton name="chevron-left" label="Dia anterior" onPress={() => onChange(addDays(value, -1))} />
         <Pressable accessibilityRole="button" accessibilityLabel={`Data: ${shortDate(value)}. Abrir calendário`}
           onPress={() => setOpen(true)}
-          style={({ pressed }) => ({ flex: 1, height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pressed ? 0.6 : 1 })}>
-          <Icon name="calendar" size={16} color={colors.primary} />
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{shortDate(value)}</Text>
+          style={({ pressed }) => ({ flex: 1, height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: pressed ? 0.6 : 1 })}>
+          <Icon name="calendar" size={18} color={colors.primary} />
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{shortDate(value)}</Text>
         </Pressable>
         <IconButton name="chevron-right" label="Próximo dia" onPress={() => onChange(addDays(value, 1))} />
       </View>
@@ -45,30 +45,30 @@ function CalendarSheet({ visible, value, onClose, onPick }: {
         paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: insets.bottom + space.lg, gap: space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <IconButton name="chevron-left" label="Mês anterior" onPress={() => setMonth(addMonths(month, -1))} />
-          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{monthLabel(month)}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{monthLabel(month)}</Text>
           <IconButton name="chevron-right" label="Próximo mês" onPress={() => setMonth(addMonths(month, 1))} />
         </View>
 
         <View style={{ flexDirection: 'row' }}>
           {WEEKDAYS.map((w, i) => (
-            <Text key={i} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600', color: colors.muted }}>{w}</Text>
+            <Text key={i} style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: colors.muted }}>{w}</Text>
           ))}
         </View>
 
         {weeks.map((week, wi) => (
           <View key={wi} style={{ flexDirection: 'row' }}>
             {week.map((d, di) => {
-              if (!d) return <View key={di} style={{ flex: 1, height: 37 }} />;
+              if (!d) return <View key={di} style={{ flex: 1, height: 41 }} />;
               const selected = d === value;
               const isToday = d === t;
               return (
                 <Pressable key={d} onPress={() => onPick(d)} accessibilityRole="button"
                   accessibilityState={{ selected }} accessibilityLabel={shortDate(d)}
-                  style={{ flex: 1, height: 37, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+                  style={{ flex: 1, height: 41, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 35, height: 35, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
                     backgroundColor: selected ? colors.primary : 'transparent',
                     borderWidth: isToday && !selected ? 1.5 : 0, borderColor: colors.primary }}>
-                    <Text style={{ fontSize: 13, fontWeight: selected || isToday ? '700' : '400',
+                    <Text style={{ fontSize: 14, fontWeight: selected || isToday ? '700' : '400',
                       color: selected ? '#FFFFFF' : isToday ? colors.primary : colors.text }}>
                       {Number(d.slice(8))}
                     </Text>
@@ -82,9 +82,9 @@ function CalendarSheet({ visible, value, onClose, onPick }: {
         <View style={{ flexDirection: 'row', gap: space.sm, paddingTop: space.sm }}>
           {[['Hoje', t], ['Ontem', addDays(t, -1)]].map(([label, d]) => (
             <Pressable key={label} onPress={() => onPick(d)} accessibilityRole="button"
-              style={({ pressed }) => ({ flex: 1, height: 38, borderRadius: radius.input, backgroundColor: colors.card,
+              style={({ pressed }) => ({ flex: 1, height: 42, borderRadius: radius.input, backgroundColor: colors.card,
                 alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>{label}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{label}</Text>
             </Pressable>
           ))}
         </View>

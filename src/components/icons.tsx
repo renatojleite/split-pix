@@ -91,7 +91,7 @@ const paths: Record<IconName, (c: string) => React.ReactNode> = {
 };
 
 export function Icon({
-  name, size = 19, color = colors.text, strokeWidth = 2,
+  name, size = 21, color = colors.text, strokeWidth = 2,
 }: { name: IconName; size?: number; color?: string; strokeWidth?: number }) {
   const draw = paths[name] ?? paths.tag;
   return (
@@ -102,7 +102,7 @@ export function Icon({
   );
 }
 
-export function Logo({ size = 29, light = false }: { size?: number; light?: boolean }) {
+export function Logo({ size = 32, light = false }: { size?: number; light?: boolean }) {
   return (
     <Svg width={size} height={(size * 64) / 88} viewBox="0 0 88 64">
       <Circle cx={30} cy={32} r={26} fill="none" stroke={light ? '#FFFFFF' : colors.primary} strokeWidth={7} />

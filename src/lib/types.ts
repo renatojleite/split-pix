@@ -74,3 +74,12 @@ export type InvitePreview = {
   already_member: boolean;
   unclaimed: { id: string; display_name: string }[];
 };
+
+export type EntryComment = {
+  id: string;
+  entry_id: string;
+  group_id: string;
+  author_member_id: string;
+  body: string;
+  created_at: string;
+};

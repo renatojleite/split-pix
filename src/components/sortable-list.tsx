@@ -88,7 +88,7 @@ function Row({ id, index, count, step, height, positions, onDrop, onDragging, re
   }));
 
   return (
-    <Animated.View style={[{ position: 'absolute', left: 0, right: 0, height, shadowColor: '#000', shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, borderRadius: 19 }, style]}>
+    <Animated.View style={[{ position: 'absolute', left: 0, right: 0, height, shadowColor: '#000', shadowRadius: 11, shadowOffset: { width: 0, height: 6 }, borderRadius: 21 }, style]}>
       {render((child) => <GestureDetector gesture={pan}>{child}</GestureDetector>)}
     </Animated.View>
   );

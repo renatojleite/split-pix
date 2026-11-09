@@ -231,6 +231,21 @@ ok(!!(await fails(A, `update group_members set pix_key='+5511900000000' where id
 await as(A, `select set_member_pix($1, null, null, null)`, [R2]);
 ok((await as(A, `select pix_key is null k from group_members where id=$1`, [R2]))[0].k, 'limpar a chave');
 
+// Comentários nos lançamentos
+const [{ ce }] = await as(A, `select save_entry(p_group_id => $1, p_type => 'expense', p_title => 'Feira', p_amount_cents => 5000, p_paid_by => $2, p_occurred_on => '2026-11-09') ce`, [g, R]);
+const [{ c1 }] = await as(A, `select add_entry_comment($1, '  Inclui as frutas da semana  ') c1`, [ce]);
+const seen = await as(B, `select c.body, m.display_name from entry_comments c join group_members m on m.id = c.author_member_id where c.entry_id=$1`, [ce]);
+ok(seen.length === 1 && seen[0].body === 'Inclui as frutas da semana' && seen[0].display_name === 'Renato', 'membro vê comentário com autor');
+await as(B, `select add_entry_comment($1, 'ok!')`, [ce]);
+ok((await as(A, `select count(*)::int n from entry_comments where entry_id=$1`, [ce]))[0].n === 2, 'outro membro também comenta');
+ok(!!(await fails(B, `select remove_entry_comment($1)`, [c1])), 'só quem escreveu apaga');
+ok(!!(await fails(D, `select add_entry_comment($1, 'oi')`, [ce])), 'quem é de fora não comenta');
+ok((await as(D, `select count(*)::int n from entry_comments where entry_id=$1`, [ce]))[0].n === 0, 'quem é de fora não lê');
+ok(!!(await fails(A, `select add_entry_comment($1, '   ')`, [ce])), 'comentário vazio não entra');
+ok(!!(await fails(A, `insert into entry_comments (entry_id, group_id, author_member_id, body) values ($1, $2, $3, 'x')`, [ce, g, P])), 'não escreve direto na tabela (nem em nome de outro)');
+await as(A, `select remove_entry_comment($1)`, [c1]);
+ok((await as(B, `select count(*)::int n from entry_comments where entry_id=$1 and deleted_at is null`, [ce]))[0].n === 1, 'apagar o próprio comentário');
+
 // Editar e excluir grupo
 const [{ g3 }] = await as(A, `select create_group('Praia', '🏖️', 'Renato', array['Paula'], array[5000, 5000]) g3`);
 const g3m = await as(A, `select id from group_members where group_id=$1 order by position`, [g3]);

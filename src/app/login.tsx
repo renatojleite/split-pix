@@ -37,13 +37,13 @@ export default function Login() {
             Ao continuar você aceita os Termos de uso e a Política de privacidade.
           </Text>
         </>}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 58 }}>
-          <Logo size={35} />
-          <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text, letterSpacing: -0.4 }}>split·pix</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 64 }}>
+          <Logo size={38} />
+          <Text style={{ fontSize: 26, fontWeight: '700', color: colors.text, letterSpacing: -0.4 }}>split·pix</Text>
         </View>
-        <View style={{ gap: 6, marginTop: 13 }}>
+        <View style={{ gap: 7, marginTop: 14 }}>
           <Text style={type.screenTitle}>Entre com seu e-mail</Text>
-          <Text style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>
+          <Text style={{ fontSize: 14, lineHeight: 21, color: colors.muted }}>
             Sem senha: mandamos um código de 6 dígitos para você confirmar.
           </Text>
         </View>

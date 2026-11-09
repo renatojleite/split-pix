@@ -36,11 +36,11 @@ export function Header({ title, right, back = true, center }: {
     <View style={styles.header}>
       {back ? (
         <IconButton name="back" label="Voltar" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
-      ) : <View style={{ width: 35 }} />}
+      ) : <View style={{ width: 38 }} />}
       <View style={{ flex: 1, alignItems: center ? 'center' : 'flex-start' }}>
         {center ?? (title ? <Text style={type.title} numberOfLines={1}>{title}</Text> : null)}
       </View>
-      {right ?? <View style={{ width: 35 }} />}
+      {right ?? <View style={{ width: 38 }} />}
     </View>
   );
 }
@@ -73,7 +73,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
       ]}>
       {loading ? <ActivityIndicator color={v.fg} /> : (
         <>
-          {icon ? <Icon name={icon} size={16} color={v.fg} strokeWidth={2.5} /> : null}
+          {icon ? <Icon name={icon} size={18} color={v.fg} strokeWidth={2.5} /> : null}
           <Text style={[styles.buttonText, { color: v.fg }]}>{title}</Text>
         </>
       )}
@@ -157,7 +157,7 @@ export function Card({ children, style, onPress, onLongPress }: {
   );
 }
 
-export function EmojiTile({ emoji, size = 42, onPress, label }: {
+export function EmojiTile({ emoji, size = 46, onPress, label }: {
   emoji: string; size?: number; onPress?: () => void; label?: string;
 }) {
   const tile = (
@@ -175,7 +175,7 @@ export function EmojiTile({ emoji, size = 42, onPress, label }: {
   );
 }
 
-export function Avatar({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
+export function Avatar({ name, color, size = 35 }: { name: string; color: string; size?: number }) {
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color,
       alignItems: 'center', justifyContent: 'center' }}>
@@ -187,7 +187,7 @@ export function Avatar({ name, color, size = 32 }: { name: string; color: string
 }
 
 /** Barra dividida nas cores dos membros — o elemento novo em relação ao Tricount. */
-export function SplitBar({ parts, height = 10 }: { parts: { color: string; bp: number }[]; height?: number }) {
+export function SplitBar({ parts, height = 11 }: { parts: { color: string; bp: number }[]; height?: number }) {
   const total = parts.reduce((a, p) => a + p.bp, 0) || 1;
   return (
     <View style={{ height, borderRadius: height / 2, overflow: 'hidden', flexDirection: 'row', backgroundColor: colors.card }}>
@@ -200,7 +200,7 @@ export function SplitBar({ parts, height = 10 }: { parts: { color: string; bp: n
 
 export function Loading() {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 35 }}>
       <ActivityIndicator color={colors.primary} size="large" />
     </View>
   );
@@ -208,13 +208,13 @@ export function Loading() {
 
 export function ErrorText({ children }: { children?: string | null }) {
   if (!children) return null;
-  return <Text style={{ color: colors.negative, fontSize: 11 }}>{children}</Text>;
+  return <Text style={{ color: colors.negative, fontSize: 12 }}>{children}</Text>;
 }
 
 export function SectionTitle({ children, right }: { children: string; right?: ReactNode }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: space.sm }}>
-      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{children}</Text>
+      <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{children}</Text>
       {right}
     </View>
   );
@@ -225,19 +225,19 @@ export const styles = StyleSheet.create({
   padded: { paddingHorizontal: space.xl, paddingBottom: space.xxxl },
   gap: { gap: space.lg },
   footer: { paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: space.lg, gap: space.md, backgroundColor: colors.surface },
-  header: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 45 },
-  iconButton: { width: 35, height: 35, alignItems: 'center', justifyContent: 'center' },
-  button: { height: 45, borderRadius: radius.input, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingHorizontal: space.xl },
-  buttonText: { fontSize: 14, fontWeight: '600' },
-  chip: { height: 29, paddingHorizontal: 11, borderRadius: radius.chip, backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  chipText: { fontSize: 11, color: colors.textSoft },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  segmented: { flexDirection: 'row', gap: 3, padding: 3, borderRadius: 11, backgroundColor: colors.card },
-  segment: { flex: 1, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 50 },
+  iconButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  button: { height: 50, borderRadius: radius.input, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingHorizontal: space.xl },
+  buttonText: { fontSize: 15, fontWeight: '600' },
+  chip: { height: 32, paddingHorizontal: 12, borderRadius: radius.chip, backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  chipText: { fontSize: 12, color: colors.textSoft },
+  dot: { width: 9, height: 9, borderRadius: 4 },
+  segmented: { flexDirection: 'row', gap: 3, padding: 3, borderRadius: 12, backgroundColor: colors.card },
+  segment: { flex: 1, height: 35, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   segmentOn: { backgroundColor: '#FFFFFF', elevation: 1, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
   segmentAccent: { backgroundColor: colors.primary },
-  segmentText: { fontSize: 11, color: colors.textSoft, fontWeight: '500' },
-  input: { height: 45, borderRadius: radius.input, backgroundColor: colors.card, paddingHorizontal: space.lg, fontSize: 14, color: colors.text },
-  inputBig: { height: 51, fontSize: 24, fontWeight: '700' },
+  segmentText: { fontSize: 12, color: colors.textSoft, fontWeight: '500' },
+  input: { height: 50, borderRadius: radius.input, backgroundColor: colors.card, paddingHorizontal: space.lg, fontSize: 15, color: colors.text },
+  inputBig: { height: 56, fontSize: 26, fontWeight: '700' },
   card: { borderRadius: radius.row, backgroundColor: colors.card, padding: space.lg },
 });

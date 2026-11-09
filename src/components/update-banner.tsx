@@ -19,13 +19,13 @@ export function UpdateBanner() {
       onPress={async () => { setReloading(true); await Updates.reloadAsync(); }}
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg,
-        borderRadius: 16, backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1,
+        borderRadius: 18, backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1,
       })}>
-      <Text style={{ fontSize: 18 }}>✨</Text>
-      <Text style={{ flex: 1, color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>
+      <Text style={{ fontSize: 20 }}>✨</Text>
+      <Text style={{ flex: 1, color: '#FFFFFF', fontSize: 13, fontWeight: '600' }}>
         Nova versão pronta. Toque para atualizar.
       </Text>
-      {reloading ? <ActivityIndicator color="#FFFFFF" /> : <Icon name="chevron-right" size={16} color="#FFFFFF" />}
+      {reloading ? <ActivityIndicator color="#FFFFFF" /> : <Icon name="chevron-right" size={18} color="#FFFFFF" />}
     </Pressable>
   );
 }

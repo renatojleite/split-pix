@@ -128,18 +128,18 @@ export default function ComprovanteScreen() {
               <SourceTile emoji="📄" label="PDF ou arquivo" sub="Comprovante salvo no celular" onPress={file} />
             </View>
           ) : null}
-          {error ? <Text style={{ fontSize: 13, lineHeight: 18, color: colors.negative }}>{error}</Text> : null}
-          <Card style={{ gap: 6, backgroundColor: colors.primarySoft }}>
-            <Text style={{ fontSize: 12, lineHeight: 17, color: colors.primaryInk }}>
+          {error ? <Text style={{ fontSize: 14, lineHeight: 20, color: colors.negative }}>{error}</Text> : null}
+          <Card style={{ gap: 7, backgroundColor: colors.primarySoft }}>
+            <Text style={{ fontSize: 13, lineHeight: 19, color: colors.primaryInk }}>
               💡 Mais rápido: no app do banco, toque em <Text style={{ fontWeight: '700' }}>Compartilhar comprovante</Text> e escolha o split-pix.
             </Text>
-            <Text style={{ fontSize: 12, lineHeight: 17, color: colors.primaryInk }}>🔒 Nada sai do celular. CPF, chave Pix e códigos são descartados.</Text>
+            <Text style={{ fontSize: 13, lineHeight: 19, color: colors.primaryInk }}>🔒 Nada sai do celular. CPF, chave Pix e códigos são descartados.</Text>
           </Card>
           {showPaste ? (
             <PasteBox onAnalyze={pasted} />
           ) : (
             <Pressable onPress={() => setShowPaste(true)} hitSlop={8}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>Prefere colar o texto do comprovante?</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Prefere colar o texto do comprovante?</Text>
             </Pressable>
           )}
         </StepBody>
@@ -154,9 +154,9 @@ export default function ComprovanteScreen() {
               style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.card,
                 borderWidth: 2, borderColor: groupId === g.id ? colors.primary : colors.divider,
                 backgroundColor: groupId === g.id ? colors.primarySoft : colors.surface }}>
-              <EmojiTile emoji={g.emoji} size={36} />
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: colors.text }}>{g.name}</Text>
-              {groupId === g.id ? <Text style={{ fontSize: 18, color: colors.primary }}>✓</Text> : null}
+              <EmojiTile emoji={g.emoji} size={40} />
+              <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: colors.text }}>{g.name}</Text>
+              {groupId === g.id ? <Text style={{ fontSize: 20, color: colors.primary }}>✓</Text> : null}
             </Pressable>
           ))}
         </StepBody>
@@ -181,15 +181,15 @@ function Review({ r, text, onRetry }: { r: ReceiptFields; text: string; onRetry:
         <Found label={r.invoice ? 'Loja' : 'Para'} value={r.toName} />
         {r.invoice ? null : <Found label="De" value={r.fromName} />}
       </Card>
-      <Text style={{ fontSize: 12, lineHeight: 17, color: colors.muted }}>
+      <Text style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>
         {r.invoice ? 'Valor a pagar já com descontos, conferido pela conta da nota. ' : ''}⚠️ marca o que vale conferir com atenção. Você ainda ajusta tudo antes de salvar.
       </Text>
       <View style={{ flexDirection: 'row', gap: space.lg, flexWrap: 'wrap' }}>
         <Pressable onPress={onRetry} hitSlop={8}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>Ler outro comprovante</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>Ler outro comprovante</Text>
         </Pressable>
         <Pressable onPress={async () => { await Clipboard.setStringAsync(redactReceipt(text)); setCopied(true); }} hitSlop={8}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted }}>{copied ? 'Copiado sem dados pessoais ✓' : 'Leu errado? Copiar texto'}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.muted }}>{copied ? 'Copiado sem dados pessoais ✓' : 'Leu errado? Copiar texto'}</Text>
         </Pressable>
       </View>
     </StepBody>
@@ -243,13 +243,13 @@ function suggest(detail: GroupDetail, r: ReceiptFields, userId: string) {
 
 function Progress({ steps, index }: { steps: number; index: number }) {
   return (
-    <View style={{ gap: 6 }}>
-      <View style={{ flexDirection: 'row', gap: 6 }}>
+    <View style={{ gap: 7 }}>
+      <View style={{ flexDirection: 'row', gap: 7 }}>
         {Array.from({ length: steps }, (_, i) => (
           <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= index ? colors.primary : colors.divider }} />
         ))}
       </View>
-      <Text style={{ fontSize: 11, fontWeight: '600', color: colors.muted }}>Passo {index + 1} de {steps}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '600', color: colors.muted }}>Passo {index + 1} de {steps}</Text>
     </View>
   );
 }
@@ -257,13 +257,13 @@ function Progress({ steps, index }: { steps: number; index: number }) {
 function StepBody({ emoji, kicker, title, text, children }: { emoji: string; kicker?: string; title: string; text: string; children: ReactNode }) {
   return (
     <View style={{ gap: space.lg, paddingTop: space.sm }}>
-      <View style={{ alignItems: 'center', gap: 8 }}>
-        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primaryInk, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 34 }}>{emoji}</Text>
+      <View style={{ alignItems: 'center', gap: 9 }}>
+        <View style={{ width: 79, height: 79, borderRadius: 40, backgroundColor: colors.primaryInk, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 37 }}>{emoji}</Text>
         </View>
-        {kicker ? <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: colors.primary }}>{kicker}</Text> : null}
-        <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, textAlign: 'center' }}>{title}</Text>
-        <Text style={{ fontSize: 14, lineHeight: 20, color: colors.textSoft, textAlign: 'center' }}>{text}</Text>
+        {kicker ? <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 1.7, color: colors.primary }}>{kicker}</Text> : null}
+        <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text, textAlign: 'center' }}>{title}</Text>
+        <Text style={{ fontSize: 15, lineHeight: 22, color: colors.textSoft, textAlign: 'center' }}>{text}</Text>
       </View>
       {children}
     </View>
@@ -276,12 +276,12 @@ function SourceTile({ emoji, label, sub, onPress, highlight }: { emoji: string; 
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.card,
         backgroundColor: highlight ? colors.primaryInk : colors.surface, borderWidth: highlight ? 0 : 1, borderColor: colors.divider,
         opacity: pressed ? 0.8 : 1 })}>
-      <Text style={{ fontSize: 28 }}>{emoji}</Text>
+      <Text style={{ fontSize: 31 }}>{emoji}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: highlight ? '#FFFFFF' : colors.text }}>{label}</Text>
-        <Text style={{ fontSize: 12, color: highlight ? AI_TEXT : colors.muted }}>{sub}</Text>
+        <Text style={{ fontSize: 18, fontWeight: '700', color: highlight ? '#FFFFFF' : colors.text }}>{label}</Text>
+        <Text style={{ fontSize: 13, color: highlight ? AI_TEXT : colors.muted }}>{sub}</Text>
       </View>
-      <Text style={{ fontSize: 18, color: highlight ? '#FFFFFF' : colors.muted }}>›</Text>
+      <Text style={{ fontSize: 20, color: highlight ? '#FFFFFF' : colors.muted }}>›</Text>
     </Pressable>
   );
 }
@@ -294,12 +294,12 @@ function Option({ emoji, title, sub, selected, disabled, onPress }: {
       style={{ flexDirection: 'row', gap: space.md, padding: space.lg, borderRadius: radius.card, borderWidth: 2,
         borderColor: selected ? colors.primary : colors.divider, backgroundColor: selected ? colors.primarySoft : colors.surface,
         opacity: disabled ? 0.45 : 1 }}>
-      <Text style={{ fontSize: 24 }}>{emoji}</Text>
+      <Text style={{ fontSize: 26 }}>{emoji}</Text>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{title}</Text>
-        <Text style={{ fontSize: 12, lineHeight: 17, color: colors.textSoft }}>{sub}</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{title}</Text>
+        <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSoft }}>{sub}</Text>
       </View>
-      {selected ? <Text style={{ fontSize: 18, color: colors.primary }}>✓</Text> : null}
+      {selected ? <Text style={{ fontSize: 20, color: colors.primary }}>✓</Text> : null}
     </Pressable>
   );
 }
@@ -307,11 +307,11 @@ function Option({ emoji, title, sub, selected, disabled, onPress }: {
 function Found({ label, value, low }: { label: string; value: string | null; low?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-      <Text style={{ width: 52, fontSize: 13, color: colors.muted }}>{label}</Text>
-      <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: value ? colors.text : colors.muted }} numberOfLines={2}>
+      <Text style={{ width: 57, fontSize: 14, color: colors.muted }}>{label}</Text>
+      <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: value ? colors.text : colors.muted }} numberOfLines={2}>
         {value ?? 'não encontrado'}
       </Text>
-      {value ? <Text style={{ fontSize: 14 }}>{low ? '⚠️' : '✓'}</Text> : null}
+      {value ? <Text style={{ fontSize: 15 }}>{low ? '⚠️' : '✓'}</Text> : null}
     </View>
   );
 }
@@ -323,7 +323,7 @@ function PasteBox({ onAnalyze }: { onAnalyze: (t: string) => void }) {
       <Button title="Colar do comprovante" icon="copy" variant="secondary"
         onPress={async () => { const c = await Clipboard.getStringAsync(); if (c.trim()) onAnalyze(c); }} />
       <Input value={t} onChangeText={setT} multiline placeholder="…ou cole/digite o texto aqui"
-        style={{ minHeight: 70, maxHeight: 140, textAlignVertical: 'top', paddingTop: 10, fontSize: 12 }} />
+        style={{ minHeight: 77, maxHeight: 140, textAlignVertical: 'top', paddingTop: 11, fontSize: 13 }} />
       {t.trim() ? <Button title="Analisar texto" onPress={() => onAnalyze(t)} /> : null}
     </View>
   );

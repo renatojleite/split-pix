@@ -70,9 +70,9 @@ function MemberForm({ detail, member }: { detail: GroupDetail; member: Member })
   return (
     <Screen>
       <Header title={isMe ? 'Você no grupo' : 'Participante'} />
-      <View style={{ alignItems: 'center', gap: 6, paddingVertical: space.sm }}>
-        <Avatar name={name || member.display_name} color={member.color} size={58} />
-        <Text style={{ fontSize: 11, color: colors.muted }}>
+      <View style={{ alignItems: 'center', gap: 7, paddingVertical: space.sm }}>
+        <Avatar name={name || member.display_name} color={member.color} size={64} />
+        <Text style={{ fontSize: 12, color: colors.muted }}>
           {member.left_at ? 'saiu do grupo' : isMe ? 'você' : member.user_id ? (member.role === 'owner' ? 'criou o grupo' : 'usa o app') : 'ainda sem conta no app'}
         </Text>
       </View>
@@ -84,10 +84,10 @@ function MemberForm({ detail, member }: { detail: GroupDetail; member: Member })
         <Button title="Salvar nome" loading={rename.isPending}
           onPress={async () => { await rename.mutateAsync({ memberId: member.id, name }); }} />
       ) : null}
-      {rename.isSuccess && !changed ? <Text style={{ fontSize: 11, color: colors.positive }}>Nome salvo ✓</Text> : null}
+      {rename.isSuccess && !changed ? <Text style={{ fontSize: 12, color: colors.positive }}>Nome salvo ✓</Text> : null}
       <ErrorText>{rename.error?.message}</ErrorText>
 
-      <Card style={{ gap: 5 }}>
+      <Card style={{ gap: 6 }}>
         <Row label="Divisão padrão" value={`${formatPercent(bp)}%`} />
         <Row label="Saldo acumulado" value={balances.isLoading ? '…' : formatBRL(balance, { sign: true })}
           tone={balance > 0 ? colors.positive : balance < 0 ? colors.negative : undefined} />
@@ -99,7 +99,7 @@ function MemberForm({ detail, member }: { detail: GroupDetail; member: Member })
         <View style={{ gap: space.sm, paddingTop: space.lg }}>
           <Button title={isMe ? 'Sair do grupo' : 'Remover do grupo'} variant="danger" icon={isMe ? 'logout' : 'trash'}
             onPress={confirmRemove} disabled={!!blocked || balances.isLoading} loading={remove.isPending} />
-          {blocked ? <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted, textAlign: 'center' }}>{blocked}</Text> : null}
+          {blocked ? <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted, textAlign: 'center' }}>{blocked}</Text> : null}
           <ErrorText>{remove.error?.message}</ErrorText>
         </View>
       ) : null}
@@ -110,8 +110,8 @@ function MemberForm({ detail, member }: { detail: GroupDetail; member: Member })
 function Row({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <Text style={{ fontSize: 12, color: colors.muted }}>{label}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '700', color: tone ?? colors.text }}>{value}</Text>
+      <Text style={{ fontSize: 13, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: tone ?? colors.text }}>{value}</Text>
     </View>
   );
 }
@@ -144,18 +144,18 @@ function PixKeySection({ groupId, member, canEdit, isMe }: { groupId: string; me
     return (
       <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 11, color: colors.muted }}>Chave Pix{has ? ` (${label})` : ''}</Text>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: has ? colors.text : colors.muted }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: colors.muted }}>Chave Pix{has ? ` (${label})` : ''}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: has ? colors.text : colors.muted }} numberOfLines={1}>
             {has ? member.pix_key : '(ausente)'}
           </Text>
-          {has && member.pix_name ? <Text style={{ fontSize: 11, color: colors.muted }} numberOfLines={1}>{member.pix_name}</Text> : null}
+          {has && member.pix_name ? <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>{member.pix_name}</Text> : null}
           {!canEdit && !has ? (
-            <Text style={{ fontSize: 11, color: colors.muted }}>Só {member.display_name} cadastra a própria chave, no app.</Text>
+            <Text style={{ fontSize: 12, color: colors.muted }}>Só {member.display_name} cadastra a própria chave, no app.</Text>
           ) : null}
         </View>
         {canEdit ? (
           <Pressable onPress={() => setEditing(true)} hitSlop={8}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>{has ? 'Alterar' : 'Cadastrar'}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>{has ? 'Alterar' : 'Cadastrar'}</Text>
           </Pressable>
         ) : null}
       </Card>
@@ -164,21 +164,21 @@ function PixKeySection({ groupId, member, canEdit, isMe }: { groupId: string; me
 
   return (
     <Card style={{ gap: space.md }}>
-      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{isMe ? 'Sua chave Pix' : `Chave Pix de ${member.display_name}`}</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{isMe ? 'Sua chave Pix' : `Chave Pix de ${member.display_name}`}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
         {PIX_KEY_TYPES.map((t) => <Chip key={t.value} label={t.label} selected={keyType === t.value} onPress={() => setKeyType(t.value)} />)}
       </View>
       <Input value={key} onChangeText={setKey} placeholder={info.placeholder} keyboardType={info.keyboard}
         autoCapitalize="none" autoCorrect={false} style={{ backgroundColor: colors.surface }} />
       {key.trim() && keyError ? <ErrorText>{keyError}</ErrorText> : null}
       <Input value={name} onChangeText={setName} placeholder="Nome de quem recebe" maxLength={40} style={{ backgroundColor: colors.surface }} />
-      <Text style={{ fontSize: 11, lineHeight: 14, color: colors.muted }}>
+      <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
         Fica salva no grupo, visível só para os membros. Entra no relatório e no Pix de acerto.
       </Text>
       <ErrorText>{setPix.error?.message}</ErrorText>
-      <View style={{ flexDirection: 'row', gap: 6 }}>
-        <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 38 }} onPress={() => setEditing(false)} />
-        <Button title="Salvar" style={{ flex: 1, height: 38 }} onPress={save} loading={setPix.isPending}
+      <View style={{ flexDirection: 'row', gap: 7 }}>
+        <Button title="Cancelar" variant="secondary" style={{ flex: 1, height: 42 }} onPress={() => setEditing(false)} />
+        <Button title="Salvar" style={{ flex: 1, height: 42 }} onPress={save} loading={setPix.isPending}
           disabled={!normalized || !name.trim()} />
       </View>
       {has ? (

@@ -29,17 +29,17 @@ export default function LoginCallback() {
   }, [url]);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 26, backgroundColor: colors.surface }}>
-      <Logo size={51} />
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, padding: 29, backgroundColor: colors.surface }}>
+      <Logo size={56} />
       {error ? (
         <>
-          <Text style={{ fontSize: 14, color: colors.text, textAlign: 'center' }}>{error}</Text>
+          <Text style={{ fontSize: 15, color: colors.text, textAlign: 'center' }}>{error}</Text>
           <Button title="Voltar ao login" onPress={() => router.replace('/login')} style={{ alignSelf: 'stretch' }} />
         </>
       ) : (
         <>
           <ActivityIndicator color={colors.primary} size="large" />
-          <Text style={{ fontSize: 13, color: colors.muted }}>Entrando…</Text>
+          <Text style={{ fontSize: 14, color: colors.muted }}>Entrando…</Text>
         </>
       )}
     </View>
