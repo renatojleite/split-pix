@@ -136,7 +136,10 @@ export function SummaryTab({ detail, month, onMonth }: {
                       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 6,
                         borderTopWidth: 1, borderColor: colors.divider, opacity: pressed ? 0.6 : 1 })}>
                       <Text style={{ width: 40, fontSize: 11, color: colors.muted }}>{dayMonth(e.occurred_on)}</Text>
-                      <Text style={{ flex: 1, fontSize: 12, color: colors.textSoft }} numberOfLines={1}>{e.emoji ? `${e.emoji} ` : ''}{e.title}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, color: colors.textSoft }} numberOfLines={1}>{e.emoji ? `${e.emoji} ` : ''}{e.title}</Text>
+                        <Text style={{ fontSize: 11, color: colors.muted }} numberOfLines={1}>Pago por {name(e.paid_by)}</Text>
+                      </View>
                       <Text style={{ fontSize: 12, fontWeight: '600', color: colors.text }}>{formatBRL(e.amount_cents)}</Text>
                     </Pressable>
                   ))}
