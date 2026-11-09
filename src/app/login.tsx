@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 
 import { Logo } from '@/components/icons';
 import { Button, ErrorText, Field, Input, Screen } from '@/components/ui';
-import { sendCode } from '@/lib/auth';
+import { sendCode, authError } from '@/lib/auth';
 import { colors, type } from '@/theme';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,7 +22,7 @@ export default function Login() {
       await sendCode(email);
       router.push({ pathname: '/codigo', params: { email: email.trim().toLowerCase() } });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível enviar o código.');
+      setError(authError(e, 'Não foi possível enviar o código.'));
     } finally {
       setBusy(false);
     }

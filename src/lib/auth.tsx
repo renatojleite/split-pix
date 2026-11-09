@@ -91,3 +91,15 @@ export async function verifyCode(email: string, token: string) {
 export async function signOut() {
   await supabase.auth.signOut();
 }
+
+/** Mensagens do login (Supabase Auth) em português. */
+export function authError(e: unknown, fallback: string): string {
+  const m = e instanceof Error ? e.message : '';
+  if (/rate limit|too many|over_email_send_rate/i.test(m)) {
+    return 'Muitos códigos pedidos em pouco tempo. Use o último código que chegou no seu e-mail ou tente de novo em alguns minutos.';
+  }
+  if (/expired|invalid.*(otp|token)|token.*(expired|invalid)/i.test(m)) return 'Código inválido ou vencido. Peça um novo.';
+  if (/fetch|network/i.test(m)) return 'Sem conexão. Tente de novo.';
+  if (/invalid.*email|email.*invalid/i.test(m)) return 'E-mail inválido.';
+  return m || fallback;
+}

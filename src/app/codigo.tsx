@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Button, ErrorText, Header, Screen } from '@/components/ui';
-import { sendCode, verifyCode } from '@/lib/auth';
+import { sendCode, verifyCode, authError } from '@/lib/auth';
 import { colors, radius, type } from '@/theme';
 
 const LENGTH = 6;
@@ -48,7 +48,7 @@ export default function Codigo() {
     try {
       await sendCode(email);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível reenviar.');
+      setError(authError(e, 'Não foi possível reenviar.'));
     }
   }
 

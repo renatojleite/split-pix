@@ -5,7 +5,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui';
-import { sessionFromUrl } from '@/lib/auth';
+import { sessionFromUrl, authError } from '@/lib/auth';
 import { colors } from '@/theme';
 
 /** O link do e-mail abre splitpix://login-callback#access_token=… e cai aqui. */
@@ -22,7 +22,7 @@ export default function LoginCallback() {
         if (ok) router.replace('/');
         else setError('Este link não trouxe um acesso válido. Peça outro.');
       })
-      .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : 'Não foi possível entrar.'));
+      .catch((e: unknown) => alive && setError(authError(e, 'Não foi possível entrar.')));
     return () => {
       alive = false;
     };
