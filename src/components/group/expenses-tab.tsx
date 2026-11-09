@@ -202,7 +202,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
               {e.recurrence_total ? `🔁 ${e.recurrence_index}/${e.recurrence_total} · ` : ''}{subtitle(e)}
             </Text>
           </View>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.positive }}>
             {formatBRL(e.amount_cents)}
           </Text>
           {!selected ? <MoreButton label={`Ações de ${e.title}`} onOpen={(anchor) => setMenu({ entry: e, anchor })} /> : null}
