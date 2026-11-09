@@ -5,7 +5,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActionSheet } from '@/components/action-sheet';
-import { Icon, Logo } from '@/components/icons';
+import { Logo } from '@/components/icons';
 import { MoreButton, PopoverMenu, type Anchor, type MenuItem } from '@/components/popover-menu';
 import { SortableList } from '@/components/sortable-list';
 import { UpdateBanner } from '@/components/update-banner';
@@ -96,16 +96,16 @@ export default function Home() {
         <ErrorText>{groups.error?.message}</ErrorText>
 
         {list.length > 1 ? (
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: -space.sm }}>Arraste pelo ≡ para mudar a ordem.</Text>
+          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: -space.sm }}>Segure um grupo e arraste para mudar a ordem.</Text>
         ) : null}
         <SortableList key={list.map((g) => g.id).join(',')} items={list} rowHeight={ROW} gap={space.lg}
-          onReorder={reorder} onDragging={setDragging}
+          onReorder={reorder} onDragging={setDragging} longPress
           renderItem={(g, handle) => {
             const status = describeMyBalance(g.myBalance, g.me, g.members);
             return (
+              handle(
               <Card onPress={() => router.push({ pathname: '/g/[id]', params: { id: g.id } })}
-                onLongPress={(ev) => setGroupMenu({ group: g, anchor: { x: ev.nativeEvent.pageX - 180, y: ev.nativeEvent.pageY, width: 180, height: 0 } })}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: ROW, paddingVertical: 0, paddingRight: 3, borderRadius: 21 }}>
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, height: ROW, paddingVertical: 0, paddingRight: 8, borderRadius: 21 }}>
                 <View>
                   <EmojiTile emoji={g.emoji} />
                   {g.unseen > 0 ? (
@@ -131,12 +131,8 @@ export default function Home() {
                   ) : null}
                 </View>
                 <MoreButton label={`Ações de ${g.name}`} onOpen={(anchor) => setGroupMenu({ group: g, anchor })} />
-                {handle(
-                  <View accessibilityLabel={`Arrastar ${g.name}`} style={{ width: 36, height: ROW, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="grip" size={20} color={colors.muted} />
-                  </View>,
-                )}
-              </Card>
+              </Card>,
+              )
             );
           }} />
 

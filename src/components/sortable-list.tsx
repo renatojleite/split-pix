@@ -10,13 +10,15 @@ type Positions = Record<string, number>;
  * Lista que reordena arrastando pela alça. Linhas de altura fixa (rowHeight).
  * Monte com key = ids na ordem atual: quando a ordem salva muda, a lista recomeça dela.
  */
-export function SortableList<T extends { id: string }>({ items, rowHeight, gap, renderItem, onReorder, onDragging }: {
+export function SortableList<T extends { id: string }>({ items, rowHeight, gap, renderItem, onReorder, onDragging, longPress }: {
   items: T[];
   rowHeight: number;
   gap: number;
   renderItem: (item: T, handle: (child: ReactNode) => ReactNode) => ReactNode;
   onReorder: (ids: string[]) => void;
   onDragging?: (dragging: boolean) => void;
+  /** Arrasta segurando o item (sem alça): só ativa depois de um toque longo, então tocar e rolar continuam normais. */
+  longPress?: boolean;
 }) {
   const positions = useSharedValue<Positions>(Object.fromEntries(items.map((it, i) => [it.id, i])));
   const step = rowHeight + gap;
@@ -30,17 +32,18 @@ export function SortableList<T extends { id: string }>({ items, rowHeight, gap, 
     <View style={{ height: Math.max(0, items.length * step - gap) }}>
       {items.map((it, i) => (
         <Row key={it.id} id={it.id} index={i} count={items.length} step={step} height={rowHeight}
-          positions={positions} onDrop={drop} onDragging={onDragging ?? (() => {})}
+          positions={positions} onDrop={drop} onDragging={onDragging ?? (() => {})} longPress={!!longPress}
           render={(handle) => renderItem(it, handle)} />
       ))}
     </View>
   );
 }
 
-function Row({ id, index, count, step, height, positions, onDrop, onDragging, render }: {
+function Row({ id, index, count, step, height, positions, onDrop, onDragging, render, longPress }: {
   id: string; index: number; count: number; step: number; height: number; positions: SharedValue<Positions>;
   onDrop: (p: Positions) => void; onDragging: (d: boolean) => void;
   render: (handle: (child: ReactNode) => ReactNode) => ReactNode;
+  longPress: boolean;
 }) {
   const top = useSharedValue(index * step);
   const start = useSharedValue(0);
@@ -51,10 +54,10 @@ function Row({ id, index, count, step, height, positions, onDrop, onDragging, re
     if (cur !== prev && cur !== undefined && !active.get()) top.set(withTiming(cur * step, { duration: 180 }));
   });
 
-  const pan = Gesture.Pan()
-    .minDistance(1)
-    .onBegin(() => { scheduleOnRN(onDragging, true); }) // trava a rolagem já no toque na alça
-    .onStart(() => { active.set(true); start.set(top.get()); })
+  const base = longPress ? Gesture.Pan().activateAfterLongPress(350) : Gesture.Pan().minDistance(1);
+  const pan = base
+    .onBegin(() => { if (!longPress) scheduleOnRN(onDragging, true); }) // com alça: trava a rolagem já no toque
+    .onStart(() => { if (longPress) scheduleOnRN(onDragging, true); active.set(true); start.set(top.get()); })
     .onUpdate((e) => {
       top.set(Math.min(Math.max(start.get() + e.translationY, -step / 3), (count - 1) * step + step / 3));
       const to = Math.min(Math.max(Math.round(top.get() / step), 0), count - 1);
