@@ -30,14 +30,14 @@ export function CommentBadge({ count, onPress }: { count: number; onPress: () =>
 export function CommentNote({ c, author, onRemove }: { c: EntryComment; author: string; onRemove?: () => void }) {
   return (
     <View style={{ gap: 4 }}>
-      <Text style={{ fontSize: 14, lineHeight: 21, color: colors.noteInk }}>{c.body}</Text>
+      <Text style={{ fontSize: 13, lineHeight: 19, color: colors.noteInk }}>{c.body}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-        <Text style={{ flex: 1, fontSize: 12, color: colors.noteInk, opacity: 0.75 }}>
+        <Text style={{ flex: 1, fontSize: 10, color: colors.noteInk, opacity: 0.6 }}>
           <Text style={{ fontWeight: '700' }}>{author}</Text> · {commentDate(c.created_at)}
         </Text>
         {onRemove ? (
           <Pressable onPress={onRemove} hitSlop={8} accessibilityRole="button" accessibilityLabel="Apagar comentário">
-            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.noteInk, opacity: 0.75 }}>Apagar</Text>
+            <Text style={{ fontSize: 10, fontWeight: '600', color: colors.noteInk, opacity: 0.6 }}>Apagar</Text>
           </Pressable>
         ) : null}
       </View>

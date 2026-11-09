@@ -110,14 +110,14 @@ export function ExpensesTab({ detail, month, onMonth }: {
             </View>
           ) : null}
           {withComments > 0 ? (
-            <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="button"
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'flex-start',
-                paddingHorizontal: space.md, paddingVertical: 7, borderRadius: 15, borderWidth: 1, borderColor: colors.noteBorder,
+            <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
+              accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
+                paddingHorizontal: space.md, paddingVertical: 5, borderRadius: 15, borderWidth: 1,
+                borderColor: showComments ? colors.noteStrong : colors.noteBorder,
                 backgroundColor: pressed || showComments ? colors.noteBorder : colors.note })}>
-              <Text style={{ fontSize: 13 }}>💬</Text>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.noteInk }}>
-                {showComments ? 'Fechar todos os comentários' : `Expandir todos os comentários (${withComments})`}
-              </Text>
+              <Text style={{ fontSize: 12 }}>💬</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.noteInk }}>Comentários ({withComments})</Text>
             </Pressable>
           ) : null}
           {list.length > 0 ? (
