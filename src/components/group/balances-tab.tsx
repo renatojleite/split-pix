@@ -66,24 +66,48 @@ export function BalancesTab({ detail, month, onMonth }: {
             </Text>
           ) : debts.map((t, i) => {
             const mine = t.to === me?.id ? 'in' : t.from === me?.id ? 'out' : null;
+            const params = { from: t.from, to: t.to, amount: String(t.cents) };
+            const pix = (mode: 'receive' | 'pay') =>
+              router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode, ...params } });
             return (
-              <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${name(t.from)} deve ${formatBRL(t.cents)} a ${name(t.to)}`}
-                onPress={(ev) => setPend({ t, anchor: { x: ev.nativeEvent.pageX - 200, y: ev.nativeEvent.pageY, width: 200, height: 0 } })}
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 9, paddingHorizontal: space.sm,
-                  borderRadius: 10, backgroundColor: pressed ? colors.card : mine === 'in' ? colors.positiveSoft : mine === 'out' ? colors.negativeSoft : 'transparent' })}>
-                <Text style={{ flex: 1, fontSize: 14, color: colors.text }} numberOfLines={1}>
-                  <Text style={{ fontWeight: '700' }}>{name(t.from)}</Text>
-                  <Text style={{ color: colors.muted }}>  →  </Text>
-                  <Text style={{ fontWeight: '700' }}>{name(t.to)}</Text>
-                </Text>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: mine === 'in' ? colors.positive : mine === 'out' ? colors.negative : colors.text }}>
-                  {formatBRL(t.cents)}
-                </Text>
-                <Text style={{ fontSize: 16, color: colors.muted }}>›</Text>
-              </Pressable>
+              <View key={i} style={{ gap: space.sm, padding: space.sm, borderRadius: 12,
+                backgroundColor: mine === 'in' ? colors.positiveSoft : mine === 'out' ? colors.negativeSoft : 'transparent' }}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`${name(t.from)} deve ${formatBRL(t.cents)} a ${name(t.to)}`}
+                  onPress={(ev) => setPend({ t, anchor: { x: ev.nativeEvent.pageX - 200, y: ev.nativeEvent.pageY, width: 200, height: 0 } })}
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, opacity: pressed ? 0.6 : 1 })}>
+                  <Text style={{ flex: 1, fontSize: 14, color: colors.text }} numberOfLines={1}>
+                    <Text style={{ fontWeight: '700' }}>{name(t.from)}</Text>
+                    <Text style={{ color: colors.muted }}>  →  </Text>
+                    <Text style={{ fontWeight: '700' }}>{name(t.to)}</Text>
+                  </Text>
+                  <Text style={{ fontSize: 16, fontWeight: '800', color: mine === 'in' ? colors.positive : mine === 'out' ? colors.negative : colors.text }}>
+                    {formatBRL(t.cents)}
+                  </Text>
+                  {!mine ? <Text style={{ fontSize: 16, color: colors.muted }}>›</Text> : null}
+                </Pressable>
+                {mine ? (
+                  // O diferencial: pagar ou cobrar com Pix em um toque, já com o valor.
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                    <Pressable onPress={() => pix(mine === 'out' ? 'pay' : 'receive')} accessibilityRole="button"
+                      accessibilityLabel={mine === 'out' ? `Pagar ${formatBRL(t.cents)} via Pix` : `Receber ${formatBRL(t.cents)} via Pix`}
+                      style={({ pressed }) => ({ flex: 1, height: 46, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        backgroundColor: mine === 'out' ? (pressed ? '#047857' : '#059669') : (pressed ? colors.primaryPressed : colors.primary),
+                        shadowColor: mine === 'out' ? '#059669' : colors.primary, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4 })}>
+                      <Text style={{ fontSize: 17 }}>💸</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>
+                        {mine === 'out' ? 'Pagar via Pix' : 'Cobrar via Pix'}
+                      </Text>
+                    </Pressable>
+                    <Pressable onPress={() => openTransfer(params)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Registrar acerto manual"
+                      style={{ paddingHorizontal: space.sm }}>
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSoft, textAlign: 'center' }}>{mine === 'out' ? 'Já paguei?' : 'Já recebi?'}{'\n'}Registrar</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
             );
           })}
-          {debts.length ? <Text style={{ fontSize: 11, color: colors.muted }}>Toque numa pendência para pagar/receber via Pix ou registrar o acerto.</Text> : null}
+          {debts.length ? <Text style={{ fontSize: 11, color: colors.muted }}>Pix já com o valor certo: o app gera o QR/código copia e cola com a chave de quem recebe.</Text> : null}
         </View>
       ) : null}
 
