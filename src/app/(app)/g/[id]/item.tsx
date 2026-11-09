@@ -188,6 +188,17 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
               <IconButton name="trash" label="Excluir" color={colors.negative} onPress={confirmDelete} />
             </View>
           ) : undefined} />
+        {!params.fromReceipt && !isEditing && kind === 'expense' ? (
+          <Pressable accessibilityRole="button" onPress={() => router.replace({ pathname: '/comprovante', params: { groupId: detail.group.id } })}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: colors.primaryInk,
+              borderRadius: radius.input, paddingVertical: space.sm, paddingHorizontal: space.md, opacity: pressed ? 0.8 : 1 })}>
+            <Text style={{ fontSize: 18 }}>✨</Text>
+            <Text style={{ flex: 1, fontSize: 13, color: '#FFFFFF' }}>
+              <Text style={{ fontWeight: '700' }}>Tem o comprovante?</Text> Preencha com IA
+            </Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#93C5FD' }}>Usar ›</Text>
+          </Pressable>
+        ) : null}
         {params.fromReceipt && !isEditing ? (
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: radius.input, padding: space.md }}>
             <Text style={{ fontSize: 12, lineHeight: 17, color: colors.primaryInk }}>

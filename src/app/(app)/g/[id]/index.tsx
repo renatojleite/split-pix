@@ -71,7 +71,7 @@ export default function GroupScreen() {
       {tab === 'despesas' ? (
         // Acima da barra de navegação do Android (o app desenha por baixo dela).
         <View style={{ position: 'absolute', bottom: insets.bottom + 16, alignSelf: 'center' }}>
-          <Button title="Adicionar" icon="plus" onPress={() => router.push({ pathname: '/g/[id]/item', params: { id } })}
+          <Button title="Adicionar" icon="plus" onPress={() => router.push({ pathname: '/g/[id]/novo', params: { id } })}
             style={{ borderRadius: 22, paddingHorizontal: 22, elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } }} />
         </View>
       ) : null}
