@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { formatBRL } from '@/lib/money';
-import { shownPeople, summarize } from '@/lib/summary';
+import { pairwiseDebts, shownPeople, summarize } from '@/lib/summary';
 import type { Category, Entry, Member } from '@/lib/types';
 import { PREF, usePref } from '@/lib/prefs';
 import { colors, radius, space } from '@/theme';
@@ -121,7 +121,7 @@ export function PeopleBlock({ entries, members, categories }: {
             );
           })}
           <View style={{ borderTopWidth: 1, borderColor: colors.divider, paddingTop: space.md, gap: 4 }}>
-            {s.transfers.length ? s.transfers.map((t, i) => (
+            {pairwiseDebts(entries).length ? pairwiseDebts(entries).map((t, i) => (
               <Text key={i} style={{ fontSize: 13, color: colors.text }}>
                 ⚖️ Acerto do mês: <Text style={{ fontWeight: '700' }}>{name(t.from)}</Text> deve{' '}
                 <Text style={{ fontWeight: '700', color: colors.negative }}>{formatBRL(t.cents)}</Text> a <Text style={{ fontWeight: '700' }}>{name(t.to)}</Text>

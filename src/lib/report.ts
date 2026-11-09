@@ -4,7 +4,7 @@
 import { addDays, addMonths, monthLabel } from './dates.ts';
 import { formatBRL, formatPercent } from './money.ts';
 import { buildPixPayload, type PixKeyType } from './pix.ts';
-import { shownPeople, summarize } from './summary.ts';
+import { pairwiseDebts, shownPeople, summarize } from './summary.ts';
 import type { Category, Entry, Group, Member } from './types';
 
 export type ReportKind = 'summary' | 'statement';
@@ -71,7 +71,8 @@ export type PendingPix = { from: string; to: string; fromName: string; toName: s
 /** Quem deve a quem no período, já com o Pix copia e cola no valor (null se quem recebe não tem chave). */
 export function pendingPix({ entries, members, categories, group }: Pick<ReportInput, 'entries' | 'members' | 'categories' | 'group'>): PendingPix[] {
   const name = (id: string) => members.find((m) => m.id === id)?.display_name ?? '—';
-  return summarize(entries, members, categories).transfers.map((t) => {
+  void categories; // a dívida direta não depende das categorias
+  return pairwiseDebts(entries).map((t) => {
     const to = members.find((m) => m.id === t.to);
     return { ...t, fromName: name(t.from), toName: name(t.to), code: to ? pixFor(to, t.cents, group) : null };
   });

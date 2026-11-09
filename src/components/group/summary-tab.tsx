@@ -6,7 +6,7 @@ import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayMonth } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
-import { shownPeople, summarize } from '@/lib/summary';
+import { pairwiseDebts, shownPeople, summarize } from '@/lib/summary';
 import { colors, radius, space } from '@/theme';
 import { Icon } from '../icons';
 import { Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle, SplitBar } from '../ui';
@@ -38,6 +38,8 @@ export function SummaryTab({ detail, month, onMonth }: {
 
   const s = summarize(source.data, members, categories);
   const expenses = source.data.filter((e) => e.type === 'expense');
+  const debts = pairwiseDebts(source.data);
+  const pending = debts.reduce((a, t) => a + t.cents, 0);
   const pct = (r: number) => `${(r * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 
   return (
@@ -60,12 +62,12 @@ export function SummaryTab({ detail, month, onMonth }: {
       {/* Entradas e saldo geral ficam ocultos por enquanto. */}
       <View style={{ flexDirection: 'row', gap: space.md }}>
         <Stat label="Gasto total" value={formatBRL(s.spent)} />
-        <Stat label="Pendente entre vocês" value={formatBRL(s.pending)} tone={s.pending ? 'negative' : undefined} />
+        <Stat label="Pendente entre vocês" value={formatBRL(pending)} tone={pending ? 'negative' : undefined} />
       </View>
 
-      {s.transfers.length ? (
+      {debts.length ? (
         <Card style={{ gap: 6 }}>
-          {s.transfers.map((t, i) => (
+          {debts.map((t, i) => (
             <Text key={i} style={{ fontSize: 13, color: colors.text }}>
               {name(t.from)} → {name(t.to)}: <Text style={{ fontWeight: '700' }}>{formatBRL(t.cents)}</Text>
             </Text>

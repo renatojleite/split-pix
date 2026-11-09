@@ -27,9 +27,8 @@ export function BalancesTab({ detail, month, onMonth }: {
   const entries = source.data ?? [];
   const s = summarize(entries, members, detail.categories);
   const settlements = entries.filter((e) => e.type === 'transfer');
-  // Pendências: simplificado (menos transferências) é o padrão; direto mostra cada par.
-  const [view, setView] = useState<'simple' | 'direct'>('simple');
-  const debts = view === 'simple' ? s.transfers : pairwiseDebts(entries);
+  // Pendências: dívida direta entre cada par (mais intuitivo que a versão simplificada).
+  const debts = pairwiseDebts(entries);
   const [pend, setPend] = useState<{ t: { from: string; to: string; cents: number }; anchor: Anchor } | null>(null);
   function pendItems(t: { from: string; to: string; cents: number }): MenuItem[] {
     const params = { from: t.from, to: t.to, amount: String(t.cents) };
@@ -61,15 +60,6 @@ export function BalancesTab({ detail, month, onMonth }: {
             <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colors.text }}>Pendências</Text>
             {debts.length ? <Text style={{ fontSize: 12, color: colors.muted }}>total {formatBRL(debts.reduce((a, t) => a + t.cents, 0))}</Text> : null}
           </View>
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <Chip label="Simplificado" selected={view === 'simple'} onPress={() => setView('simple')} />
-            <Chip label="Entre cada pessoa" selected={view === 'direct'} onPress={() => setView('direct')} />
-          </View>
-          <Text style={{ fontSize: 11, lineHeight: 15, color: colors.muted }}>
-            {view === 'simple'
-              ? 'Menor número de Pix para todo mundo ficar quite (alguém pode pagar a dívida de outro).'
-              : 'Quanto cada pessoa deve diretamente a cada outra, pelas despesas e acertos entre elas.'}
-          </Text>
           {debts.length === 0 ? (
             <Text style={{ fontSize: 13, color: colors.positive, fontWeight: '600' }}>
               ✓ Ninguém deve nada {scope === 'month' ? 'neste mês' : 'no total'}
