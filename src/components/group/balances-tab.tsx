@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayMonth } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
 import { shownPeople, summarize } from '@/lib/summary';
-import { colors, space } from '@/theme';
-import { Avatar, Button, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle } from '../ui';
+import { colors, radius, space } from '@/theme';
+import { PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
+import { Avatar, Card, Chip, EmojiTile, ErrorText, Loading, SectionTitle } from '../ui';
 import { MonthNav } from './month-nav';
 
 export function BalancesTab({ detail, month, onMonth }: {
@@ -26,6 +27,16 @@ export function BalancesTab({ detail, month, onMonth }: {
   const entries = source.data ?? [];
   const s = summarize(entries, members, detail.categories);
   const settlements = entries.filter((e) => e.type === 'transfer');
+  const [pend, setPend] = useState<{ t: { from: string; to: string; cents: number }; anchor: Anchor } | null>(null);
+  function pendItems(t: { from: string; to: string; cents: number }): MenuItem[] {
+    const params = { from: t.from, to: t.to, amount: String(t.cents) };
+    const pix = (mode: 'receive' | 'pay') => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode, ...params } });
+    return [
+      ...(t.to === me?.id ? [{ emoji: '💸', label: 'Receber via Pix', onPress: () => pix('receive') }] : []),
+      ...(t.from === me?.id ? [{ emoji: '💸', label: 'Pagar via Pix', onPress: () => pix('pay') }] : []),
+      { emoji: '🤝', label: 'Registrar acerto', onPress: () => openTransfer(params) },
+    ];
+  }
   const openTransfer = (params: Record<string, string>) =>
     router.push({ pathname: '/g/[id]/item', params: { id: detail.group.id, type: 'transfer', ...params } });
 
@@ -39,50 +50,50 @@ export function BalancesTab({ detail, month, onMonth }: {
       {source.isLoading ? <Loading /> : null}
       <ErrorText>{source.error?.message}</ErrorText>
 
-      {!source.isLoading && s.transfers.length === 0 ? (
-        <Card style={{ gap: 3 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Tudo certo</Text>
-          <Text style={{ fontSize: 12, color: colors.muted }}>Ninguém deve nada {scope === 'month' ? 'neste mês' : 'no total'}.</Text>
-        </Card>
+      {/* Pendências: quem deve a quem (resumo, funciona com 2, 3, 4… pessoas). Toque numa linha para acertar. */}
+      {!source.isLoading ? (
+        <View style={{ backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.divider,
+          padding: space.lg, gap: space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+            <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colors.text }}>Pendências</Text>
+            {s.transfers.length ? <Text style={{ fontSize: 12, color: colors.muted }}>total {formatBRL(s.pending)}</Text> : null}
+          </View>
+          {s.transfers.length === 0 ? (
+            <Text style={{ fontSize: 13, color: colors.positive, fontWeight: '600' }}>
+              ✓ Ninguém deve nada {scope === 'month' ? 'neste mês' : 'no total'}
+            </Text>
+          ) : s.transfers.map((t, i) => {
+            const mine = t.to === me?.id ? 'in' : t.from === me?.id ? 'out' : null;
+            return (
+              <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${name(t.from)} deve ${formatBRL(t.cents)} a ${name(t.to)}`}
+                onPress={(ev) => setPend({ t, anchor: { x: ev.nativeEvent.pageX - 200, y: ev.nativeEvent.pageY, width: 200, height: 0 } })}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: 9, paddingHorizontal: space.sm,
+                  borderRadius: 10, backgroundColor: pressed ? colors.card : mine === 'in' ? colors.positiveSoft : mine === 'out' ? colors.negativeSoft : 'transparent' })}>
+                <Text style={{ flex: 1, fontSize: 14, color: colors.text }} numberOfLines={1}>
+                  <Text style={{ fontWeight: '700' }}>{name(t.from)}</Text>
+                  <Text style={{ color: colors.muted }}>  →  </Text>
+                  <Text style={{ fontWeight: '700' }}>{name(t.to)}</Text>
+                </Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: mine === 'in' ? colors.positive : mine === 'out' ? colors.negative : colors.text }}>
+                  {formatBRL(t.cents)}
+                </Text>
+                <Text style={{ fontSize: 16, color: colors.muted }}>›</Text>
+              </Pressable>
+            );
+          })}
+          {s.transfers.length ? <Text style={{ fontSize: 11, color: colors.muted }}>Toque numa pendência para pagar/receber via Pix ou registrar o acerto.</Text> : null}
+        </View>
       ) : null}
-
-      {s.transfers.map((t, i) => {
-        const iReceive = t.to === me?.id;
-        const iPay = t.from === me?.id;
-        const tone = iReceive ? colors.positive : iPay ? colors.negative : colors.text;
-        const headline = iReceive ? `${name(t.from)} te deve` : iPay ? `Você deve a ${name(t.to)}` : `${name(t.from)} deve a ${name(t.to)}`;
-        const params = { from: t.from, to: t.to, amount: String(t.cents) };
-        return (
-          <Card key={i} style={{ gap: 11, backgroundColor: iReceive ? colors.positiveSoft : iPay ? colors.negativeSoft : colors.card, borderRadius: 21, padding: 18 }}>
-            <View style={{ gap: 3 }}>
-              <Text style={{ fontSize: 13, color: tone }}>{headline}</Text>
-              <Text style={{ fontSize: 30, fontWeight: '700', color: tone }}>{formatBRL(t.cents)}</Text>
-            </View>
-            {iReceive ? (
-              <>
-                <Button title="Receber via Pix" variant="positive"
-                  onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode: 'receive', ...params } })} />
-                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 38 }} />
-              </>
-            ) : iPay ? (
-              <>
-                <Button title="Pagar via Pix" variant="negative"
-                  onPress={() => router.push({ pathname: '/g/[id]/pix', params: { id: detail.group.id, mode: 'pay', ...params } })} />
-                <Button title="Registrar acerto manual" variant="ghost" onPress={() => openTransfer(params)} style={{ height: 38 }} />
-              </>
-            ) : (
-              <Button title="Registrar acerto" onPress={() => openTransfer(params)} />
-            )}
-          </Card>
-        );
-      })}
 
       <SectionTitle>Por pessoa</SectionTitle>
       {shownPeople(s.people, members).map((p) => {
         const m = members.find((x) => x.id === p.memberId)!;
-        // A conta do saldo, linha a linha: total gasto (pagou + acertos enviados) − cota = saldo.
+        // Total gasto (pagou + acertos enviados) − cota − total recebido (acertos recebidos + entradas) + sua parte nas entradas = saldo.
         const spentTotal = p.paid + p.sent;
-        const incomeNet = p.received - p.incomeShare; // ficou com a parte dos outros numa entrada
+        const receivedTotal = p.got + p.received;
+        const gotFrom = members
+          .map((o) => ({ o, cents: settlements.filter((e) => e.transfer_to === m.id && e.paid_by === o.id).reduce((a, e) => a + e.amount_cents, 0) }))
+          .filter((x) => x.cents > 0);
         const tone = p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted;
         return (
           <Card key={m.id} style={{ gap: space.md }}>
@@ -92,20 +103,25 @@ export function BalancesTab({ detail, month, onMonth }: {
                 {m.display_name}{m.id === me?.id ? <Text style={{ fontSize: 12, fontWeight: '400', color: colors.muted }}>  você</Text> : null}
               </Text>
             </View>
-            <View style={{ gap: 4 }}>
-              <Line sign="" label="Pagou" value={p.paid} />
-              <Line sign="+" label="Acertos enviados" value={p.sent} />
-              <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: 2 }} />
-              <Line sign="=" label="Total gasto" value={spentTotal} strong />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 2, paddingHorizontal: space.sm,
+            <View style={{ gap: 3 }}>
+              <Line sign="" label="Total gasto" value={spentTotal} strong />
+              <Sub label="Pagou (despesas)" value={p.paid} />
+              <Sub label="Acertos enviados (transferências)" value={p.sent} />
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 5, paddingHorizontal: space.sm,
                 paddingVertical: 7, borderRadius: 10, backgroundColor: colors.primarySoft }}>
                 <Text style={{ width: 14, fontSize: 14, fontWeight: '700', color: colors.primaryInk }}>−</Text>
                 <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: colors.primaryInk }}>Cota por pessoa</Text>
                 <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primaryInk }}>{formatBRL(p.share)}</Text>
               </View>
-              {p.got ? <Line sign="−" label="Acertos recebidos" value={p.got} /> : null}
-              {incomeNet ? <Line sign={incomeNet > 0 ? '−' : '+'} label="Entradas (recebeu além da sua parte)" value={Math.abs(incomeNet)} /> : null}
-              <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: 2 }} />
+
+              <Line sign="−" label="Total recebido" value={receivedTotal} strong />
+              {gotFrom.map((x) => <Sub key={x.o.id} label={`Recebido de ${name(x.o.id)}`} value={x.cents} />)}
+              {p.received ? <Sub label="Receitas (entradas)" value={p.received} /> : null}
+              {!receivedTotal ? <Sub label="Nada recebido" value={0} /> : null}
+              {p.incomeShare ? <Line sign="+" label="Sua parte nas receitas" value={p.incomeShare} /> : null}
+
+              <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: 4 }} />
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.sm, paddingVertical: 9,
                 borderRadius: 10, backgroundColor: p.balance > 0 ? colors.positiveSoft : p.balance < 0 ? colors.negativeSoft : colors.card }}>
                 <Text style={{ width: 14, fontSize: 16, fontWeight: '800', color: tone }}>=</Text>
@@ -141,8 +157,9 @@ export function BalancesTab({ detail, month, onMonth }: {
       )}
 
       <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted }}>
-        Total gasto = o que a pessoa pagou + acertos que ela enviou. Saldo = total gasto − cota por pessoa − acertos recebidos (entradas entram também). Atualiza na hora quando alguém do grupo lança.
+        Total gasto = pagou + acertos enviados. Total recebido = acertos recebidos + receitas. Saldo = total gasto − cota por pessoa − total recebido + sua parte nas receitas. Atualiza na hora quando alguém do grupo lança.
       </Text>
+      <PopoverMenu anchor={pend?.anchor ?? null} items={pend ? pendItems(pend.t) : []} onClose={() => setPend(null)} />
     </ScrollView>
   );
 }
@@ -154,6 +171,15 @@ function Line({ sign, label, value, strong }: { sign: string; label: string; val
       <Text style={[style, { width: 14, color: colors.muted }]}>{sign}</Text>
       <Text style={[style, { flex: 1 }]}>{label}</Text>
       <Text style={style}>{formatBRL(value)}</Text>
+    </View>
+  );
+}
+
+function Sub({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: space.sm + 20, paddingRight: space.sm }}>
+      <Text style={{ flex: 1, fontSize: 12, color: colors.muted }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: colors.muted }}>{formatBRL(value)}</Text>
     </View>
   );
 }
