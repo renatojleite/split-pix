@@ -431,6 +431,50 @@ export function useDeleteEntry(groupId: string) {
   });
 }
 
+// ───────────── Vários lançamentos ─────────────
+
+/** Troca a categoria de vários (a divisão padrão segue a regra da nova categoria). */
+export function useSetEntriesCategory(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, categoryId }: { ids: string[]; categoryId: string | null }) =>
+      must(await supabase.rpc('set_entries_category', { p_ids: ids, p_category_id: categoryId })) as number,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.group(groupId) });
+      qc.invalidateQueries({ queryKey: keys.groups });
+    },
+  });
+}
+
+/** Duplica no mesmo grupo (cópia fiel) ou em outro (pagador/categoria pelo nome, divisão padrão do destino). */
+export function useDuplicateEntries(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, targetGroupId }: { ids: string[]; targetGroupId: string }) =>
+      must(await supabase.rpc('duplicate_entries', { p_ids: ids, p_target_group: targetGroupId })) as number,
+    onSuccess: (_n, v) => {
+      qc.invalidateQueries({ queryKey: keys.group(groupId) });
+      qc.invalidateQueries({ queryKey: keys.group(v.targetGroupId) });
+      qc.invalidateQueries({ queryKey: keys.groups });
+    },
+  });
+}
+
+/** Exclui vários (cada um só ele, mesmo se for de uma série). */
+export function useDeleteEntries(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) must(await supabase.rpc('delete_entry', { p_id: id, p_scope: 'one' }));
+      return ids.length;
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: keys.group(groupId) });
+      qc.invalidateQueries({ queryKey: keys.groups });
+    },
+  });
+}
+
 // ───────────── Saldos ─────────────
 
 export function useBalances(groupId: string) {

@@ -231,6 +231,30 @@ ok(!!(await fails(A, `update group_members set pix_key='+5511900000000' where id
 await as(A, `select set_member_pix($1, null, null, null)`, [R2]);
 ok((await as(A, `select pix_key is null k from group_members where id=$1`, [R2]))[0].k, 'limpar a chave');
 
+// Vários lançamentos: trocar categoria e duplicar
+await as(A, `select set_split_rule($1, $2, '2026-10-01', array[$3, $4]::uuid[], array[7000, 3000])`, [g, mercado, R, P]);
+const [{ id: b1 }] = await save({ title: 'Escola', amount: 10000, paidBy: R, cat: moradia, on: '2026-11-03' });
+const [{ id: b2 }] = await save({ title: 'Uniforme', amount: 999, paidBy: P, cat: moradia, mode: 'exact', custom: { [R]: 500, [P]: 499 }, on: '2026-11-03' });
+const shareOf = async (id) => Object.fromEntries((await as(A, `select member_id, share_cents from entry_shares where entry_id=$1`, [id])).map((r) => [r.member_id, Number(r.share_cents)]));
+ok(JSON.stringify(await shareOf(b1)) === JSON.stringify({ [R]: 5000, [P]: 5000 }) || (await shareOf(b1))[R] === 5000, 'antes: moradia 50/50');
+ok((await as(B, `select set_entries_category($1::uuid[], $2) n`, [[b1, b2], mercado]))[0].n === 2, 'troca categoria de vários');
+ok((await shareOf(b1))[R] === 7000 && (await shareOf(b1))[P] === 3000, 'divisão padrão segue a regra da nova categoria (70/30)');
+ok((await shareOf(b2))[R] === 500 && (await shareOf(b2))[P] === 499, 'divisão por valores é mantida');
+ok((await as(A, `select count(*)::int n from entries where id = any($1::uuid[]) and category_id=$2`, [[b1, b2], mercado]))[0].n === 2, 'categoria trocada');
+ok(!!(await fails(D, `select set_entries_category($1::uuid[], $2)`, [[b1], moradia])), 'quem é de fora não troca');
+
+ok((await as(A, `select duplicate_entries($1::uuid[], $2) n`, [[b1, b2], g]))[0].n === 2, 'duplica no mesmo grupo');
+const copies = await as(A, `select id from entries where group_id=$1 and title='Uniforme' and deleted_at is null`, [g]);
+ok(copies.length === 2 && (await shareOf(copies[1].id))[P] === 499, 'cópia no mesmo grupo mantém a divisão');
+
+const [{ g5 }] = await as(A, `select create_group('Viagem', '✈️', 'Renato', array['Paula'], array[5000, 5000]) g5`);
+ok((await as(A, `select duplicate_entries($1::uuid[], $2) n`, [[b1, b2], g5]))[0].n === 2, 'duplica em outro grupo');
+const moved = await as(A, `select e.title, m.display_name payer, c.name cat from entries e join group_members m on m.id=e.paid_by left join categories c on c.id=e.category_id where e.group_id=$1 order by e.title`, [g5]);
+ok(moved[0].title === 'Escola' && moved[0].payer === 'Renato' && moved[0].cat === 'Mercado', 'pagador e categoria pelo nome no destino');
+ok(moved[1].payer === 'Paula', 'placeholder do mesmo nome vira o pagador no destino');
+ok(!!(await fails(B, `select duplicate_entries($1::uuid[], $2)`, [[b1], g5])), 'não duplica para grupo de que não participa');
+ok(!!(await fails(A, `select entry_split_args($1)`, [b1])), 'funções internas fechadas');
+
 // Comentários nos lançamentos
 const [{ ce }] = await as(A, `select save_entry(p_group_id => $1, p_type => 'expense', p_title => 'Feira', p_amount_cents => 5000, p_paid_by => $2, p_occurred_on => '2026-11-09') ce`, [g, R]);
 const [{ c1 }] = await as(A, `select add_entry_comment($1, '  Inclui as frutas da semana  ') c1`, [ce]);

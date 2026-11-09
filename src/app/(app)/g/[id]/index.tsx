@@ -21,6 +21,7 @@ export default function GroupScreen() {
   const group = useGroup(id);
   useGroupRealtime(id);
   const [tab, setTab] = useState<Tab>('despesas');
+  const [selecting, setSelecting] = useState(false);
   const [month, setMonth] = useState(monthStart(today()));
   const [menuOpen, setMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
@@ -53,7 +54,7 @@ export default function GroupScreen() {
             </View>
           }
         />
-        <Segmented<Tab> value={tab} onChange={setTab} options={[
+        <Segmented<Tab> value={tab} onChange={(t) => { setTab(t); setSelecting(false); }} options={[
           { value: 'despesas', label: 'Despesas' },
           { value: 'saldos', label: 'Saldos' },
           { value: 'resumo', label: 'Resumo' },
@@ -62,13 +63,13 @@ export default function GroupScreen() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {tab === 'despesas' ? <ExpensesTab detail={group.data} month={month} onMonth={setMonth} /> : null}
+        {tab === 'despesas' ? <ExpensesTab detail={group.data} month={month} onMonth={setMonth} onSelecting={setSelecting} /> : null}
         {tab === 'saldos' ? <BalancesTab detail={group.data} month={month} onMonth={setMonth} /> : null}
         {tab === 'resumo' ? <SummaryTab detail={group.data} month={month} onMonth={setMonth} /> : null}
         {tab === 'divisao' ? <SplitTab detail={group.data} /> : null}
       </View>
 
-      {tab === 'despesas' ? (
+      {tab === 'despesas' && !selecting ? (
         // Acima da barra de navegação do Android (o app desenha por baixo dela).
         <View style={{ position: 'absolute', bottom: insets.bottom + 18, alignSelf: 'center' }}>
           <Button title="Adicionar" icon="plus" onPress={() => router.push({ pathname: '/g/[id]/novo', params: { id } })}

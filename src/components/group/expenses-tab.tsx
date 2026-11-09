@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useComments, useDeleteEntry, useEntries, type GroupDetail } from '@/lib/api';
+import { useComments, useDeleteEntries, useDeleteEntry, useDuplicateEntries, useEntries, useSetEntriesCategory, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayLabel } from '@/lib/dates';
 import { formatBRL, formatPercent } from '@/lib/money';
@@ -12,13 +13,17 @@ import { colors, defaultEmoji, space } from '@/theme';
 import { CommentBadge, CommentBox, CommentsModal } from '../comments';
 import { MoreButton, PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
 import { Card, EmojiTile, ErrorText, Loading } from '../ui';
+import { CategorySheet, ConfirmSheet, DuplicateSheet, SelectionBar } from './bulk';
 import { CalendarBlock } from './calendar-block';
 import { MonthNav } from './month-nav';
 import { MonthTotals, PeopleBlock } from './people-block';
 
-export function ExpensesTab({ detail, month, onMonth }: {
+export function ExpensesTab({ detail, month, onMonth, onSelecting }: {
   detail: GroupDetail; month: string; onMonth: (m: string) => void;
+  /** Avisa a tela do grupo para esconder o botão Adicionar durante a seleção. */
+  onSelecting?: (on: boolean) => void;
 }) {
+  const insets = useSafeAreaInsets();
   const userId = useUserId();
   const entries = useEntries(detail.group.id, month);
   const me = detail.members.find((m) => m.user_id === userId);
@@ -77,7 +82,8 @@ export function ExpensesTab({ detail, month, onMonth }: {
     return [
       { emoji: '💬', label: 'Comentar', onPress: () => setCommentFor(e) },
       { emoji: '✏️', label: 'Editar', onPress: () => openItem({ entryId: e.id }) },
-      { emoji: '📋', label: 'Duplicar', onPress: () => openItem({ duplicateOf: e.id }) },
+      { emoji: '📋', label: 'Duplicar', onPress: () => setDup({ ids: [e.id], single: e }) },
+      { emoji: '☑️', label: 'Selecionar vários', onPress: () => startSelect(e.id) },
       ...(e.recurrence_id
         ? [{ emoji: '🗑️', label: 'Excluir só este', destructive: true, confirm: 'Excluir só este?', onPress: () => del('one') },
            { emoji: '🗑️', label: 'Excluir este e próximos', destructive: true, confirm: 'Excluir este e os próximos?', onPress: () => del('following') }]
@@ -85,6 +91,39 @@ export function ExpensesTab({ detail, month, onMonth }: {
     ];
   }
 
+  // Seleção de vários: excluir, duplicar, mudar categoria.
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const [dup, setDup] = useState<{ ids: string[]; single?: Entry } | null>(null);
+  const [catOpen, setCatOpen] = useState(false);
+  const [delOpen, setDelOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const setCategory = useSetEntriesCategory(detail.group.id);
+  const duplicate = useDuplicateEntries(detail.group.id);
+  const removeMany = useDeleteEntries(detail.group.id);
+  const ids = selected ? [...selected] : [];
+  const flash = (msg: string) => { setNotice(msg); setTimeout(() => setNotice(null), 3200); };
+  function startSelect(id: string) { setSelected(new Set([id])); onSelecting?.(true); }
+  function endSelect() { setSelected(null); onSelecting?.(false); }
+  function toggle(id: string) {
+    const next = new Set(selected ?? []);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  }
+  const plural = (n: number) => `${n} ${n === 1 ? 'lançamento' : 'lançamentos'}`;
+
+  async function pickDuplicateTarget(target: string) {
+    const job = dup;
+    setDup(null);
+    if (!job) return;
+    // Um só, no mesmo grupo: abre o formulário já preenchido para ajustar data/valor.
+    if (job.single && target === detail.group.id) { openItem({ duplicateOf: job.single.id }); return; }
+    try {
+      const n = await duplicate.mutateAsync({ ids: job.ids, targetGroupId: target });
+      const skipped = job.ids.length - n;
+      flash(`📋 ${plural(n)} ${n === 1 ? 'duplicado' : 'duplicados'}${skipped ? ` · ${skipped} acerto(s) sem as mesmas pessoas no destino` : ''}`);
+      if (selected) endSelect();
+    } catch (e) { flash(e instanceof Error ? e.message : 'Não foi possível duplicar'); }
+  }
 
   const withComments = visible.filter((e) => commentsOf(e.id).length > 0).length;
 
@@ -95,7 +134,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
       keyExtractor={(e) => e.id}
       stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={entries.isRefetching} onRefresh={() => { entries.refetch(); }} />}
-      contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 106, gap: space.sm }}
+      contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: selected ? 170 : 106, gap: space.sm }}
       ListHeaderComponent={
         <View style={{ gap: space.md, paddingTop: space.sm }}>
           <MonthNav month={month} onMonth={onMonth} />
@@ -112,7 +151,7 @@ export function ExpensesTab({ detail, month, onMonth }: {
               </Pressable>
             </View>
           ) : null}
-          <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
+          <View style={{ width: '30%', alignSelf: 'center', height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
           {withComments > 0 ? (
             <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
               accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
@@ -142,9 +181,17 @@ export function ExpensesTab({ detail, month, onMonth }: {
         const notes = commentsOf(e.id);
         return (
         <View style={{ gap: space.xs }}>
-        <Card onPress={() => openItem({ entryId: e.id })}
-          onLongPress={(ev) => setMenu({ entry: e, anchor: { x: ev.nativeEvent.pageX - 180, y: ev.nativeEvent.pageY, width: 180, height: 0 } })}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12 }}>
+        <Card onPress={() => (selected ? toggle(e.id) : openItem({ entryId: e.id }))}
+          onLongPress={(ev) => (selected ? toggle(e.id)
+            : setMenu({ entry: e, anchor: { x: ev.nativeEvent.pageX - 180, y: ev.nativeEvent.pageY, width: 180, height: 0 } }))}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12,
+            ...(selected?.has(e.id) ? { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primary } : {}) }}>
+          {selected ? (
+            <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center',
+              borderColor: selected.has(e.id) ? colors.primary : colors.muted, backgroundColor: selected.has(e.id) ? colors.primary : 'transparent' }}>
+              {selected.has(e.id) ? <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>✓</Text> : null}
+            </View>
+          ) : null}
           <EmojiTile emoji={emojiOf(e)} size={35} />
           <View style={{ flex: 1, gap: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
@@ -158,13 +205,45 @@ export function ExpensesTab({ detail, month, onMonth }: {
           <Text style={{ fontSize: 15, fontWeight: '700', color: e.type === 'expense' ? colors.text : colors.muted }}>
             {formatBRL(e.amount_cents)}
           </Text>
-          <MoreButton label={`Ações de ${e.title}`} onOpen={(anchor) => setMenu({ entry: e, anchor })} />
+          {!selected ? <MoreButton label={`Ações de ${e.title}`} onOpen={(anchor) => setMenu({ entry: e, anchor })} /> : null}
         </Card>
         {showComments && notes.length ? <CommentBox comments={notes} members={detail.allMembers} onPress={() => setCommentFor(e)} /> : null}
         </View>
         );
       }}
     />
+    {selected ? (
+      <SelectionBar count={ids.length} total={visible.length} bottom={insets.bottom + 12}
+        onAll={() => setSelected(new Set(ids.length === visible.length ? [] : visible.map((e) => e.id)))}
+        onCategory={() => setCatOpen(true)} onDuplicate={() => setDup({ ids })} onDelete={() => setDelOpen(true)} onCancel={endSelect} />
+    ) : null}
+    {notice ? (
+      <View pointerEvents="none" style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: insets.bottom + (selected ? 150 : 84),
+        padding: space.md, borderRadius: 14, backgroundColor: colors.inverse }}>
+        <Text style={{ fontSize: 13, color: '#FFFFFF', textAlign: 'center' }}>{notice}</Text>
+      </View>
+    ) : null}
+    <DuplicateSheet visible={!!dup} onClose={() => setDup(null)} groupId={detail.group.id} count={dup?.ids.length ?? 0}
+      onPick={pickDuplicateTarget} />
+    <CategorySheet visible={catOpen} onClose={() => setCatOpen(false)} categories={detail.categories} count={ids.length}
+      onPick={async (categoryId) => {
+        setCatOpen(false);
+        try {
+          const n = await setCategory.mutateAsync({ ids, categoryId });
+          flash(`🏷️ Categoria trocada em ${plural(n)}`);
+          endSelect();
+        } catch (e) { flash(e instanceof Error ? e.message : 'Não foi possível trocar a categoria'); }
+      }} />
+    <ConfirmSheet visible={delOpen} onClose={() => setDelOpen(false)} title={`Excluir ${plural(ids.length)}?`}
+      subtitle="Os saldos são recalculados. Em séries recorrentes, exclui só os selecionados." action="Excluir"
+      onConfirm={async () => {
+        setDelOpen(false);
+        try {
+          const n = await removeMany.mutateAsync(ids);
+          flash(`🗑️ ${plural(n)} ${n === 1 ? 'excluído' : 'excluídos'}`);
+          endSelect();
+        } catch (e) { flash(e instanceof Error ? e.message : 'Não foi possível excluir'); }
+      }} />
     <PopoverMenu anchor={menu?.anchor ?? null} items={menu ? menuItems(menu.entry) : []} onClose={() => setMenu(null)} />
     <CommentsModal visible={!!commentFor} onClose={() => setCommentFor(null)} groupId={detail.group.id}
       entryId={commentFor?.id ?? null} title={commentFor?.title ?? ''} comments={commentFor ? commentsOf(commentFor.id) : []}
