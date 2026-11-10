@@ -62,6 +62,9 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   const usedCats = detail.categories.filter((c) => list.some((e) => e.category_id === c.id));
   const hasUncategorized = list.some((e) => e.type === 'expense' && !e.category_id);
   const filtering = !!q || !!catFilter;
+  // Busca e categorias ficam recolhidas; abrem pelo botão 🔍 ao lado do título.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const catName = catFilter === 'none' ? 'Sem categoria' : detail.categories.find((c) => c.id === catFilter)?.name;
 
   const sections = Object.values(
     visible.reduce<Record<string, { title: string; weekday: string; data: Entry[] }>>((acc, e) => {
@@ -187,6 +190,18 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
             <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colors.text }}>
               Lançamentos <Text style={{ fontSize: 13, fontWeight: '500', color: colors.muted }}>{visible.length}</Text>
             </Text>
+            {list.length > 0 ? (
+              <Pressable onPress={() => setFiltersOpen(!filtersOpen)} hitSlop={8} accessibilityRole="button"
+                accessibilityState={{ expanded: filtersOpen }} accessibilityLabel={filtersOpen ? 'Fechar busca e filtros' : 'Buscar e filtrar'}
+                style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: filtersOpen || filtering ? colors.primary : pressed ? colors.divider : colors.card })}>
+                <Text style={{ fontSize: 14, color: filtersOpen || filtering ? '#FFFFFF' : colors.textSoft }}>🔍</Text>
+                {filtering && !filtersOpen ? (
+                  <View style={{ position: 'absolute', top: 0, right: 0, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.negative,
+                    borderWidth: 1.5, borderColor: colors.surface }} />
+                ) : null}
+              </Pressable>
+            ) : null}
             {withComments > 0 ? (
               <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
                 accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
@@ -199,12 +214,24 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
               </Pressable>
             ) : null}
           </View>
-          {list.length > 0 ? (
+          {/* Recolhido com filtro ativo: só um resumo com ✕ para limpar. */}
+          {!filtersOpen && filtering ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: space.md,
+              paddingVertical: 5, borderRadius: 15, backgroundColor: colors.primarySoft }}>
+              <Text style={{ fontSize: 12, color: colors.primaryInk }} numberOfLines={1}>
+                Filtro: <Text style={{ fontWeight: '700' }}>{[catName, q ? `"${query.trim()}"` : null].filter(Boolean).join(' · ')}</Text>
+              </Text>
+              <Pressable onPress={() => { setQuery(''); setCatFilter(null); }} hitSlop={10} accessibilityLabel="Limpar filtro">
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryInk }}>✕</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {list.length > 0 && filtersOpen ? (
             <>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, height: 42, paddingHorizontal: space.md,
                 borderRadius: 13, backgroundColor: colors.card }}>
                 <Text style={{ fontSize: 14, color: colors.muted }}>🔍</Text>
-                <TextInput value={query} onChangeText={setQuery} placeholder="Buscar por título, categoria ou pessoa"
+                <TextInput value={query} onChangeText={setQuery} placeholder="Buscar por título, categoria ou pessoa" autoFocus
                   placeholderTextColor={colors.muted} returnKeyType="search"
                   style={{ flex: 1, fontSize: 14, color: colors.text, paddingVertical: 0 }} />
                 {query ? (
