@@ -13,7 +13,7 @@ export function Backdrop({ onPress, label = 'Fechar', children, style }: {
 }) {
   return (
     <>
-      <Animated.View entering={FadeIn.duration(1000)} pointerEvents="none"
+      <Animated.View entering={FadeIn.duration(750)} pointerEvents="none"
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }]} />
       <Pressable style={[{ flex: 1 }, style]} onPress={onPress} accessibilityLabel={label}>
         {children}
@@ -25,7 +25,7 @@ export function Backdrop({ onPress, label = 'Fechar', children, style }: {
 /** Painel de baixo que sobe deslizando (no máximo ~80% da tela; o conteúdo rola dentro). */
 export function SlideUp({ children }: { children: ReactNode }) {
   return (
-    <Animated.View entering={SlideInDown.duration(1000).easing(Easing.out(Easing.cubic))}
+    <Animated.View entering={SlideInDown.duration(750).easing(Easing.out(Easing.cubic))}
       style={{ maxHeight: '80%', flexShrink: 1 }}>
       {children}
     </Animated.View>
