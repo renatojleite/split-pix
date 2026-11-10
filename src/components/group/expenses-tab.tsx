@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, SectionList, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAllEntries, useComments, useDeleteEntries, useDeleteEntry, useDuplicateEntries, useEntries, useSetEntriesCategory, type GroupDetail } from '@/lib/api';
@@ -17,6 +17,8 @@ import { CategorySheet, ConfirmSheet, DuplicateSheet, SelectionBar } from './bul
 import { CalendarPanel, CalendarToggle, type CalendarMode } from './calendar-block';
 import { MonthNav } from './month-nav';
 import { MonthTotals, PeopleBlock } from './people-block';
+
+const WEEKDAY = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   detail: GroupDetail; month: string; onMonth: (m: string) => void;
@@ -48,11 +50,23 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   // Fechar o calendário também tira o filtro do dia.
   const changeCal = (m: CalendarMode) => { setCalMode(m); if (m === 'off') setPickedDay(null); };
   const day = !allTime && pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
-  const visible = day ? list.filter((e) => e.occurred_on === day) : list;
+  // Filtros da lista: dia (calendário), categoria e busca por texto.
+  const [query, setQuery] = useState('');
+  const [catFilter, setCatFilter] = useState<string | null>(null); // id, 'none' = sem categoria
+  const plain = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = plain(query.trim());
+  const inDay = day ? list.filter((e) => e.occurred_on === day) : list;
+  const visible = inDay.filter((e) =>
+    (!catFilter || (catFilter === 'none' ? !e.category_id && e.type === 'expense' : e.category_id === catFilter))
+    && (!q || plain(`${e.title} ${category(e.category_id)?.name ?? ''} ${name(e.paid_by)}`).includes(q)));
+  const usedCats = detail.categories.filter((c) => list.some((e) => e.category_id === c.id));
+  const hasUncategorized = list.some((e) => e.type === 'expense' && !e.category_id);
+  const filtering = !!q || !!catFilter;
 
   const sections = Object.values(
-    visible.reduce<Record<string, { title: string; data: Entry[] }>>((acc, e) => {
-      (acc[e.occurred_on] ??= { title: allTime ? `${dayLabel(e.occurred_on)} de ${e.occurred_on.slice(0, 4)}` : dayLabel(e.occurred_on), data: [] }).data.push(e);
+    visible.reduce<Record<string, { title: string; weekday: string; data: Entry[] }>>((acc, e) => {
+      (acc[e.occurred_on] ??= { title: allTime ? `${dayLabel(e.occurred_on)} de ${e.occurred_on.slice(0, 4)}` : dayLabel(e.occurred_on),
+        weekday: WEEKDAY[new Date(`${e.occurred_on}T12:00:00`).getDay()], data: [] }).data.push(e);
       return acc;
     }, {}),
   );
@@ -159,7 +173,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
           {day ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: 12, backgroundColor: colors.primarySoft }}>
               <Text style={{ flex: 1, fontSize: 12, color: colors.primaryInk }}>
-                Mostrando só <Text style={{ fontWeight: '700' }}>{dayLabel(day)}</Text> · {visible.length} {visible.length === 1 ? 'lançamento' : 'lançamentos'}
+                Filtrado: <Text style={{ fontWeight: '700' }}>{dayLabel(day)}</Text>
               </Text>
               <Pressable onPress={() => setPickedDay(null)} hitSlop={10} accessibilityRole="button">
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>Ver todos</Text>
@@ -169,16 +183,50 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
           <MonthTotals entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} />
           <PeopleBlock entries={list} members={detail.allMembers} categories={detail.categories} meId={me?.id} allTime={allTime} />
           <View style={{ width: '30%', alignSelf: 'center', height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
-          {withComments > 0 ? (
-            <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
-              accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start',
-                paddingHorizontal: space.md, paddingVertical: 5, borderRadius: 15, borderWidth: 1,
-                borderColor: showComments ? colors.noteStrong : colors.noteBorder,
-                backgroundColor: pressed || showComments ? colors.noteBorder : colors.note })}>
-              <Text style={{ fontSize: 12 }}>💬</Text>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.noteInk }}>Comentários ({withComments})</Text>
-            </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colors.text }}>
+              Lançamentos <Text style={{ fontSize: 13, fontWeight: '500', color: colors.muted }}>{visible.length}</Text>
+            </Text>
+            {withComments > 0 ? (
+              <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
+                accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5,
+                  paddingHorizontal: space.md, paddingVertical: 5, borderRadius: 15, borderWidth: 1,
+                  borderColor: showComments ? colors.noteStrong : colors.noteBorder,
+                  backgroundColor: pressed || showComments ? colors.noteBorder : colors.note })}>
+                <Text style={{ fontSize: 12 }}>💬</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.noteInk }}>Comentários ({withComments})</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {list.length > 0 ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, height: 42, paddingHorizontal: space.md,
+                borderRadius: 13, backgroundColor: colors.card }}>
+                <Text style={{ fontSize: 14, color: colors.muted }}>🔍</Text>
+                <TextInput value={query} onChangeText={setQuery} placeholder="Buscar por título, categoria ou pessoa"
+                  placeholderTextColor={colors.muted} returnKeyType="search"
+                  style={{ flex: 1, fontSize: 14, color: colors.text, paddingVertical: 0 }} />
+                {query ? (
+                  <Pressable onPress={() => setQuery('')} hitSlop={10} accessibilityLabel="Limpar busca">
+                    <Text style={{ fontSize: 15, color: colors.muted }}>✕</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {usedCats.length + (hasUncategorized ? 1 : 0) > 1 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+                  style={{ marginHorizontal: -space.xl }} contentContainerStyle={{ paddingHorizontal: space.xl, gap: 6 }}>
+                  <Chip label="Todas" selected={!catFilter} onPress={() => setCatFilter(null)} />
+                  {usedCats.map((c) => (
+                    <Chip key={c.id} label={`${c.emoji} ${c.name}`} selected={catFilter === c.id}
+                      onPress={() => setCatFilter(catFilter === c.id ? null : c.id)} />
+                  ))}
+                  {hasUncategorized ? (
+                    <Chip label="Sem categoria" selected={catFilter === 'none'} onPress={() => setCatFilter(catFilter === 'none' ? null : 'none')} />
+                  ) : null}
+                </ScrollView>
+              ) : null}
+            </>
           ) : null}
           {entries.isLoading ? <Loading /> : null}
           <ErrorText>{entries.error?.message}</ErrorText>
@@ -187,12 +235,14 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
       ListEmptyComponent={
         entries.isLoading ? undefined : (
           <Text style={{ textAlign: 'center', color: colors.muted, fontSize: 13, paddingVertical: 35 }}>
-            {day ? 'Nenhum lançamento neste dia.' : allTime ? 'Nenhum lançamento ainda.' : 'Nenhum lançamento neste mês.'}
+            {filtering ? 'Nenhum lançamento com esse filtro.' : day ? 'Nenhum lançamento neste dia.' : allTime ? 'Nenhum lançamento ainda.' : 'Nenhum lançamento neste mês.'}
           </Text>
         )
       }
       renderSectionHeader={({ section }) => (
-        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSoft, paddingTop: space.md }}>{section.title}</Text>
+        <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSoft, paddingTop: space.md }}>
+          {section.title}<Text style={{ fontWeight: '400', color: colors.muted }}>  ·  {section.weekday}</Text>
+        </Text>
       )}
       renderItem={({ item: e }) => {
         const notes = commentsOf(e.id);

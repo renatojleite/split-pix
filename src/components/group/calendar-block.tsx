@@ -18,11 +18,10 @@ export function CalendarToggle({ mode, onMode }: { mode: CalendarMode; onMode: (
   const open = mode !== 'off';
   return (
     <Pressable onPress={() => onMode(open ? 'off' : 'week')} accessibilityRole="button" accessibilityState={{ expanded: open }}
-      accessibilityLabel={open ? 'Fechar calendário' : 'Abrir calendário'} hitSlop={6}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, height: 32, borderRadius: 16,
-        backgroundColor: open ? colors.primary : pressed ? colors.primarySoft : colors.primarySoft })}>
-      <Icon name="calendar" size={14} color={open ? '#FFFFFF' : colors.primary} />
-      <Text style={{ fontSize: 12, fontWeight: '700', color: open ? '#FFFFFF' : colors.primary }}>Calendário {open ? '▴' : '▾'}</Text>
+      accessibilityLabel={open ? 'Fechar calendário' : 'Abrir calendário'} hitSlop={8}
+      style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: open ? colors.primary : pressed ? colors.divider : colors.primarySoft })}>
+      <Icon name="calendar" size={16} color={open ? '#FFFFFF' : colors.primary} />
     </Pressable>
   );
 }
@@ -39,6 +38,7 @@ export function CalendarPanel({ month, entries, selected, onSelect, mode, onMode
   const t = today();
   const scroller = useRef<ScrollViewInstance>(null);
   const scrolledFor = useRef<string | null>(null);
+  const viewW = useRef(0);
 
   const byDay = new Map<string, { count: number; spent: number }>();
   for (const e of entries) {
@@ -50,9 +50,18 @@ export function CalendarPanel({ month, entries, selected, onSelect, mode, onMode
   if (mode === 'off') return null;
 
   const days = monthGrid(month).flat().filter((d): d is string => !!d);
-  // Começa mostrando o dia escolhido, ou hoje, ou o último dia com lançamento.
-  const focus = selected ?? (days.includes(t) ? t : [...byDay.keys()].sort().at(-1) ?? days[0]);
+  // Abre com o dia de hoje no centro (fora do mês atual: o dia escolhido ou o último com lançamento).
+  const focus = days.includes(t) ? t : selected ?? [...byDay.keys()].sort().at(-1) ?? days[0];
   const focusIndex = Math.max(0, days.indexOf(focus));
+
+  // Centraliza o dia em foco assim que a faixa tem largura conhecida.
+  function center() {
+    const key = `${month}|${focus}`;
+    if (!viewW.current || scrolledFor.current === key) return;
+    scrolledFor.current = key;
+    const x = space.sm + focusIndex * CELL + (CELL - 6) / 2 - viewW.current / 2;
+    scroller.current?.scrollTo({ x: Math.max(0, x), animated: false });
+  }
 
   const label = (d: string) => {
     const info = byDay.get(d);
@@ -64,12 +73,8 @@ export function CalendarPanel({ month, entries, selected, onSelect, mode, onMode
       {mode === 'week' ? (
         <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: space.sm, gap: 6 }}
-          onContentSizeChange={() => {
-            const key = `${month}|${focus}`;
-            if (scrolledFor.current === key) return;
-            scrolledFor.current = key;
-            scroller.current?.scrollTo({ x: Math.max(0, (focusIndex - 3) * CELL), animated: false });
-          }}>
+          onLayout={(e) => { viewW.current = e.nativeEvent.layout.width; center(); }}
+          onContentSizeChange={center}>
           {days.map((d) => {
             const has = byDay.has(d);
             const isSel = d === selected;
