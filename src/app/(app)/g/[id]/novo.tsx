@@ -1,68 +1,60 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
-import { Header, Screen } from '@/components/ui';
+import { Button, Header, Screen } from '@/components/ui';
 import { ocrSupported } from '@/lib/ocr';
 import { colors, radius, space } from '@/theme';
 
-// "Adicionar": cadastro normal ou comprovante + IA (que já abre direto na fonte escolhida).
+// "Adicionar": foco na foto do comprovante com IA; galeria e PDF como atalhos; manual como secundário.
 export default function NovoLancamentoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const ai = (source?: 'camera' | 'gallery' | 'file') =>
     router.replace({ pathname: '/comprovante', params: { groupId: id, ...(source ? { source } : {}) } });
+  const manual = () => router.replace({ pathname: '/g/[id]/item', params: { id } });
 
   return (
     <Screen>
       <Header title="Novo lançamento" />
-      <Text style={{ fontSize: 15, color: colors.textSoft }}>Como você quer cadastrar?</Text>
 
-      <View style={{ backgroundColor: colors.primaryInk, borderRadius: radius.card, padding: space.xl, gap: space.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-          <Text style={{ fontSize: 33 }}>✨</Text>
-          <View style={{ flex: 1, gap: 2 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-              <Text style={{ fontSize: 19, fontWeight: '800', color: '#FFFFFF' }}>Comprovante + IA</Text>
-              <View style={{ backgroundColor: '#22C55E', borderRadius: 9, paddingHorizontal: 7, paddingVertical: 2 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF' }}>MAIS RÁPIDO</Text>
-              </View>
-            </View>
-            <Text style={{ fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.85)' }}>
-              A IA lê o comprovante no seu celular e preenche valor, data e destinatário.
-            </Text>
+      <View style={{ alignItems: 'center', gap: space.sm, paddingTop: space.xl, paddingBottom: space.sm }}>
+        <View style={{ width: 124, height: 124, borderRadius: 62, backgroundColor: '#F7F9FF', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 104, height: 104, borderRadius: 52, backgroundColor: '#EFF4FF', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 44 }}>📷</Text>
           </View>
         </View>
-        {ocrSupported ? (
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <Quick emoji="📷" label="Foto" onPress={() => ai('camera')} />
-            <Quick emoji="🖼️" label="Galeria" onPress={() => ai('gallery')} />
-            <Quick emoji="📄" label="PDF" onPress={() => ai('file')} />
-          </View>
-        ) : (
-          <Quick emoji="📋" label="Colar texto do comprovante" onPress={() => ai()} />
-        )}
+        <Text style={{ fontSize: 19, fontWeight: '800', color: colors.text, marginTop: space.sm }}>✨ Leia o comprovante com IA</Text>
+        <Text style={{ fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' }}>
+          Valor, data e destinatário{'\n'}preenchidos automaticamente.
+        </Text>
       </View>
 
-      <Pressable onPress={() => router.replace({ pathname: '/g/[id]/item', params: { id } })} accessibilityRole="button"
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.xl,
-          borderRadius: radius.card, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.divider, opacity: pressed ? 0.7 : 1 })}>
-        <Text style={{ fontSize: 33 }}>✍️</Text>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 19, fontWeight: '700', color: colors.text }}>Cadastro normal</Text>
-          <Text style={{ fontSize: 14, lineHeight: 20, color: colors.muted }}>Digite valor, quem pagou, categoria e divisão.</Text>
-        </View>
-        <Text style={{ fontSize: 22, color: colors.muted }}>›</Text>
+      {ocrSupported ? (
+        <>
+          <Button title="Tirar foto do comprovante" onPress={() => ai('camera')} />
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: space.xxl }}>
+            <Pressable onPress={() => ai('gallery')} hitSlop={10} accessibilityRole="button">
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>🖼️ Galeria</Text>
+            </Pressable>
+            <Pressable onPress={() => ai('file')} hitSlop={10} accessibilityRole="button">
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary }}>📄 PDF</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <Button title="Colar texto do comprovante" onPress={() => ai()} />
+      )}
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, marginVertical: space.xs }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
+        <Text style={{ fontSize: 12, color: colors.muted }}>ou</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
+      </View>
+
+      <Pressable onPress={manual} accessibilityRole="button"
+        style={({ pressed }) => ({ height: 54, borderRadius: radius.input, borderWidth: 1, borderColor: colors.divider,
+          alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? colors.card : colors.surface })}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.textSoft }}>✍️ Cadastrar manualmente</Text>
       </Pressable>
     </Screen>
-  );
-}
-
-function Quick({ emoji, label, onPress }: { emoji: string; label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
-      style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 4, paddingVertical: space.md, borderRadius: radius.input,
-        backgroundColor: pressed ? '#1D4ED8' : colors.primary })}>
-      <Text style={{ fontSize: 26 }}>{emoji}</Text>
-      <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>{label}</Text>
-    </Pressable>
   );
 }
