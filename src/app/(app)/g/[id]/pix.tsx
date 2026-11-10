@@ -64,7 +64,8 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   const [name, setName] = useState(start?.name ?? defaultName(initialMode, initialOther ?? null));
   const [city, setCity] = useState(start?.city ?? '');
   const [amount, setAmount] = useState(Number(params.amount) || 0);
-  const [generated, setGenerated] = useState(false);
+  // Veio de "Pagar/Cobrar via Pix" com a chave já salva e o valor certo: mostra o código na hora.
+  const [generated, setGenerated] = useState(fromDebt && !!start && (Number(params.amount) || 0) > 0);
   const [copied, setCopied] = useState(false);
 
   /** Troca de modo ou de pessoa: carrega a chave correspondente (se já salva). */
@@ -245,6 +246,9 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
               </Text>
               <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }} numberOfLines={1}>{key}</Text>
               <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>{name}</Text>
+              {mode === 'pay' && fromRow(other) ? (
+                <Text style={{ fontSize: 11, fontWeight: '600', color: colors.positive }}>✓ Chave cadastrada por {otherName} no app</Text>
+              ) : null}
             </View>
             <Pressable onPress={() => { setEditingKey(true); setGenerated(false); }} hitSlop={8}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>Alterar</Text>
