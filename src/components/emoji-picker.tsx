@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, space } from '@/theme';
@@ -36,7 +36,8 @@ export function EmojiPicker({ visible, onClose, onPick, title = 'Escolha um emoj
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
       <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '75%' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: space.xl, paddingBottom: space.sm }}>
@@ -64,6 +65,7 @@ export function EmojiPicker({ visible, onClose, onPick, title = 'Escolha um emoj
           ))}
         </ScrollView>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, SectionList, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAllEntries, useComments, useDeleteEntries, useDeleteEntry, useDuplicateEntries, useEntries, useSetEntriesCategory, type GroupDetail } from '@/lib/api';
@@ -159,6 +160,9 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
     <>
     <SectionList
       sections={sections}
+      // Busca no topo da lista: rola para ficar acima do teclado.
+      renderScrollComponent={(props) => <KeyboardAwareScrollView {...props} bottomOffset={24} />}
+      keyboardShouldPersistTaps="handled"
       keyExtractor={(e) => e.id}
       stickySectionHeadersEnabled={false}
       refreshControl={<RefreshControl refreshing={entries.isRefetching} onRefresh={() => { entries.refetch(); }} />}
@@ -231,7 +235,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, height: 42, paddingHorizontal: space.md,
                 borderRadius: 13, backgroundColor: colors.card }}>
                 <Text style={{ fontSize: 14, color: colors.muted }}>🔍</Text>
-                <TextInput value={query} onChangeText={setQuery} placeholder="Buscar por título, categoria ou pessoa" autoFocus
+                <TextInput value={query} onChangeText={setQuery} placeholder="Buscar por título, categoria ou pessoa"
                   placeholderTextColor={colors.muted} returnKeyType="search"
                   style={{ flex: 1, fontSize: 14, color: colors.text, paddingVertical: 0 }} />
                 {query ? (

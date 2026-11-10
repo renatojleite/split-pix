@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Button, ErrorText, Header, Screen } from '@/components/ui';
 import { sendCode, verifyCode, authError } from '@/lib/auth';
@@ -53,7 +53,7 @@ export default function Codigo() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <>
       <Screen scroll={false}
         footer={<Button title="Entrar" onPress={() => verify(code)} disabled={code.length !== LENGTH} loading={busy} />}>
         <Header />
@@ -104,6 +104,6 @@ export default function Codigo() {
         </View>
         <View style={{ height: radius.card }} />
       </Screen>
-    </KeyboardAvoidingView>
+    </>
   );
 }

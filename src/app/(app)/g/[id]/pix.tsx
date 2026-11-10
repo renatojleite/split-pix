@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, Share, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, Share, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { Button, Card, Chip, ErrorText, Field, Header, Input, Loading, Screen, Segmented } from '@/components/ui';
@@ -168,7 +168,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   const canRegister = !!payerId && !!receiverId && payerId !== receiverId;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <>
       <Screen footer={!generated ? (
         <Button title="Gerar código Pix" onPress={generate} disabled={!ready} />
       ) : (
@@ -291,6 +291,6 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
           </View>
         ) : null}
       </Screen>
-    </KeyboardAvoidingView>
+    </>
   );
 }

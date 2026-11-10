@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
-  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View,
   type GestureResponderEvent, type StyleProp, type TextInputProps, type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, space, type } from '@/theme';
 import { Icon, type IconName } from './icons';
@@ -15,16 +16,25 @@ export function Screen({
   children, scroll = true, footer, padded = true,
 }: { children: ReactNode; scroll?: boolean; footer?: ReactNode; padded?: boolean }) {
   const inner = padded ? styles.padded : undefined;
+  const insets = useSafeAreaInsets();
+  const [footerH, setFooterH] = useState(0);
+  // Teclado: a tela rola até o campo ativo ficar acima dele (e acima do rodapé),
+  // e o rodapé com os botões sobe junto com o teclado.
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       {scroll ? (
-        <ScrollView contentContainerStyle={[inner, styles.gap]} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={[inner, styles.gap]} keyboardShouldPersistTaps="handled"
+          bottomOffset={footerH + 24}>
           {children}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       ) : (
         <View style={[{ flex: 1 }, inner, styles.gap]}>{children}</View>
       )}
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
+      {footer ? (
+        <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+          <View style={styles.footer} onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}>{footer}</View>
+        </KeyboardStickyView>
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -24,6 +25,7 @@ export default function RootLayout() {
   return (
     <ShareIntentProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
@@ -31,6 +33,7 @@ export default function RootLayout() {
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
     </ShareIntentProvider>
   );

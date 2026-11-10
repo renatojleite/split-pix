@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { useAddCategory, useAddMember, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
@@ -33,7 +34,7 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
     router.push({ pathname: '/g/[id]/regra', params: { id: group.id, ...(categoryId ? { categoryId } : {}) } });
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 42, gap: space.md, paddingTop: space.md }}>
+    <KeyboardAwareScrollView bottomOffset={24} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: space.xl, paddingBottom: 42, gap: space.md, paddingTop: space.md }}>
       <Card style={{ gap: 9 }} onPress={() => openRule()}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Padrão do grupo</Text>
@@ -141,7 +142,7 @@ export function SplitTab({ detail }: { detail: GroupDetail }) {
 
       <Button variant="ghost" title="Editar, arquivar ou excluir grupo"
         onPress={() => router.push({ pathname: '/g/[id]/editar', params: { id: group.id } })} />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

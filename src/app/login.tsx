@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Logo } from '@/components/icons';
 import { UpdateBanner } from '@/components/update-banner';
@@ -39,7 +39,7 @@ export default function Login() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <>
       <Screen
         footer={<>
           <Button title={creating ? 'Criar conta' : 'Entrar'} onPress={submit} disabled={!valid} loading={busy} />
@@ -96,6 +96,6 @@ export default function Login() {
         {creating && confirm && password !== confirm ? <ErrorText>As senhas não são iguais.</ErrorText> : null}
         <ErrorText>{error}</ErrorText>
       </Screen>
-    </KeyboardAvoidingView>
+    </>
   );
 }

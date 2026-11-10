@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CommentNote, CommentsModal } from '@/components/comments';
@@ -196,7 +196,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
       : 'ajuste neste item';
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <>
       <Screen footer={<>
         <ErrorText>{save.error?.message}</ErrorText>
         <Button title="Salvar" onPress={trySubmit} disabled={errors.length > 0} loading={save.isPending} />
@@ -404,7 +404,7 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
           </Pressable>
         </Modal>
       </Screen>
-    </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -527,6 +527,7 @@ function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={close} accessibilityLabel="Fechar" />
       <View style={{ maxHeight: '75%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingTop: space.sm, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
@@ -557,6 +558,7 @@ function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
           </Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
