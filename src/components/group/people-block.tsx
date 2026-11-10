@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { formatBRL } from '@/lib/money';
 import { pairwiseDebts, shownPeople, summarize } from '@/lib/summary';
 import type { Category, Entry, Member } from '@/lib/types';
+import { animateLayout } from '@/lib/anim';
 import { PREF, usePref } from '@/lib/prefs';
 import { colors, radius, space } from '@/theme';
 import { Icon } from '../icons';
@@ -25,7 +26,6 @@ export function MonthTotals({ entries, members, categories, meId }: {
   entries: Entry[]; members: Member[]; categories: Category[]; meId?: string;
 }) {
   const s = summarize(entries, members, categories);
-  const expenses = entries.filter((e) => e.type === 'expense');
   const sharing = shownPeople(s.people, members).filter((p) => p.share > 0);
   const equal = sharing.length > 1 && sharing.every((p) => Math.abs(p.share - sharing[0].share) <= 1);
   const mine = s.people.find((p) => p.memberId === meId)?.share ?? 0;
@@ -37,7 +37,6 @@ export function MonthTotals({ entries, members, categories, meId }: {
       <Box style={{ flex: 1, gap: 4 }}>
         <Text style={{ fontSize: 12, color: colors.textSoft }}>Total de despesas</Text>
         <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text }} adjustsFontSizeToFit numberOfLines={1}>{formatBRL(s.spent)}</Text>
-        <Text style={{ fontSize: 12, color: colors.muted }}>{expenses.length} {expenses.length === 1 ? 'lançamento' : 'lançamentos'}</Text>
       </Box>
       <Box style={{ flex: 1, gap: 4 }}>
         <Text style={{ fontSize: 12, color: colors.textSoft }}>Cota por pessoa</Text>
@@ -67,7 +66,7 @@ export function PeopleBlock({ entries, members, categories, allTime }: {
   return (
     <Box style={{ gap: expanded ? space.lg : space.sm, paddingVertical: expanded ? space.lg : space.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Pressable onPress={() => setOpen(!open)} disabled={pinned} accessibilityRole="button" accessibilityState={{ expanded }}
+        <Pressable onPress={() => { animateLayout(); setOpen(!open); }} disabled={pinned} accessibilityRole="button" accessibilityState={{ expanded }}
           hitSlop={8} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={{ fontSize: expanded ? 15 : 13, fontWeight: '700', color: colors.text }}>Quanto cada pessoa pagou</Text>
           {!pinned ? (
@@ -76,7 +75,7 @@ export function PeopleBlock({ entries, members, categories, allTime }: {
             </View>
           ) : null}
         </Pressable>
-        <Pressable onPress={() => { setPinned(!pinned); setOpen(true); }} hitSlop={8} accessibilityRole="switch"
+        <Pressable onPress={() => { animateLayout(); setPinned(!pinned); setOpen(true); }} hitSlop={8} accessibilityRole="switch"
           accessibilityState={{ checked: pinned }} accessibilityLabel="Deixar sempre aberto"
           style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
           <Icon name="pin" size={13} color={pinned ? colors.primary : colors.muted} strokeWidth={pinned ? 2.5 : 2} />
@@ -86,7 +85,7 @@ export function PeopleBlock({ entries, members, categories, allTime }: {
 
       {!expanded ? (
         // Retraído: uma linha por pessoa — nome, mini barra e valor.
-        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Abrir detalhes" style={{ gap: 6 }}>
+        <Pressable onPress={() => { animateLayout(); setOpen(true); }} accessibilityRole="button" accessibilityLabel="Abrir detalhes" style={{ gap: 6 }}>
           {people.map((p) => {
             const m = members.find((x) => x.id === p.memberId)!;
             const ratio = s.spent ? p.paid / s.spent : 0;

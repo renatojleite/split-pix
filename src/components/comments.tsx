@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAddComment, useRemoveComment } from '@/lib/api';
 import type { EntryComment, Member } from '@/lib/types';
 import { colors, space } from '@/theme';
+import { Backdrop, SlideUp } from '@/components/backdrop';
 
 // Comentários dos lançamentos, em amarelo pastel (post-it).
 
@@ -89,10 +90,11 @@ export function CommentsModal({ visible, onClose, groupId, entryId, title, comme
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-        <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
-        <View style={{ maxHeight: '80%', backgroundColor: colors.note, borderTopLeftRadius: 26, borderTopRightRadius: 26,
+        <Backdrop onPress={onClose} label="Fechar" />
+        <SlideUp>
+        <View style={{ flexShrink: 1, backgroundColor: colors.note, borderTopLeftRadius: 26, borderTopRightRadius: 26,
           paddingTop: space.sm, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
           <View style={{ alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: colors.noteBorder }} />
           <View style={{ paddingHorizontal: space.xl, gap: 2 }}>
@@ -122,6 +124,7 @@ export function CommentsModal({ visible, onClose, groupId, entryId, title, comme
           </View>
           {add.error ? <Text style={{ fontSize: 13, color: colors.negative, paddingHorizontal: space.xl }}>{add.error.message}</Text> : null}
         </View>
+        </SlideUp>
       </KeyboardAvoidingView>
     </Modal>
   );

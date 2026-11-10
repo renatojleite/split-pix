@@ -6,6 +6,7 @@ import { addDays, addMonths, monthGrid, monthLabel, monthStart, shortDate, today
 import { colors, radius, space } from '@/theme';
 import { Icon } from './icons';
 import { IconButton } from './ui';
+import { Backdrop, SlideUp } from '@/components/backdrop';
 
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 /** Campo de data: toca e abre um calendário. Atalhos Hoje/Ontem e setas de dia ao lado. */
@@ -38,9 +39,10 @@ function CalendarSheet({ visible, value, onClose, onPick }: {
   const weeks = monthGrid(month);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}
       onShow={() => setMonth(monthStart(value))} statusBarTranslucent navigationBarTranslucent>
-      <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar calendário" />
+      <Backdrop onPress={onClose} label="Fechar calendário" />
+      <SlideUp>
       <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: insets.bottom + space.lg, gap: space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -89,6 +91,7 @@ function CalendarSheet({ visible, value, onClose, onPick }: {
           ))}
         </View>
       </View>
+      </SlideUp>
     </Modal>
   );
 }

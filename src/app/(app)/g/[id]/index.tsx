@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { ActionSheet } from '@/components/action-sheet';
 
@@ -62,12 +63,14 @@ export default function GroupScreen() {
             </View>
           }
         />
-        <Segmented<Tab> value={tab} onChange={(t) => { setTab(t); setSelecting(false); }} options={[
-          { value: 'despesas', label: 'Despesas' },
-          { value: 'saldos', label: 'Saldos' },
-          { value: 'resumo', label: 'Resumo' },
-          { value: 'divisao', label: 'Divisão e configurações', icon: 'settings', iconOnly: true },
-        ]} />
+        <View style={{ marginBottom: space.sm }}>
+          <Segmented<Tab> value={tab} onChange={(t) => { setTab(t); setSelecting(false); }} options={[
+            { value: 'despesas', label: 'Despesas' },
+            { value: 'saldos', label: 'Saldos' },
+            { value: 'resumo', label: 'Resumo' },
+            { value: 'divisao', label: 'Divisão e configurações', icon: 'settings', iconOnly: true },
+          ]} />
+        </View>
       </View>
 
       <View style={{ flex: 1 }}>
@@ -78,8 +81,23 @@ export default function GroupScreen() {
       </View>
 
       {tab === 'despesas' && !selecting ? (
+        // Degradê branco por cima da lista, para o botão flutuar sem brigar com os itens.
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: insets.bottom + 110 }}>
+          <Svg width="100%" height="100%">
+            <Defs>
+              <LinearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
+                <Stop offset="0.55" stopColor="#FFFFFF" stopOpacity="0.9" />
+                <Stop offset="1" stopColor="#FFFFFF" stopOpacity="1" />
+              </LinearGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#fade)" />
+          </Svg>
+        </View>
+      ) : null}
+      {tab === 'despesas' && !selecting ? (
         // Acima da barra de navegação do Android (o app desenha por baixo dela).
-        <View style={{ position: 'absolute', bottom: insets.bottom + 18, alignSelf: 'center' }}>
+        <View style={{ position: 'absolute', bottom: insets.bottom + 18, alignSelf: 'center', zIndex: 10, elevation: 10 }}>
           <Button title="Adicionar" icon="plus" onPress={() => router.push({ pathname: '/g/[id]/novo', params: { id } })}
             style={{ borderRadius: 24, paddingHorizontal: 24, elevation: 4, shadowColor: colors.primary, shadowOpacity: 0.35, shadowRadius: 11, shadowOffset: { width: 0, height: 6 } }} />
         </View>

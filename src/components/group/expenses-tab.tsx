@@ -8,6 +8,7 @@ import { useAllEntries, useComments, useDeleteEntries, useDeleteEntry, useDuplic
 import { useUserId } from '@/lib/auth';
 import { dayLabel } from '@/lib/dates';
 import { formatBRL, formatPercent } from '@/lib/money';
+import { animateLayout } from '@/lib/anim';
 import { PREF, usePref } from '@/lib/prefs';
 import type { Entry } from '@/lib/types';
 import { colors, defaultEmoji, space } from '@/theme';
@@ -49,7 +50,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [calMode, setCalMode] = usePref<CalendarMode>(PREF.calendarMode, 'off');
   // Fechar o calendário também tira o filtro do dia.
-  const changeCal = (m: CalendarMode) => { setCalMode(m); if (m === 'off') setPickedDay(null); };
+  const changeCal = (m: CalendarMode) => { animateLayout(); setCalMode(m); if (m === 'off') setPickedDay(null); };
   const day = !allTime && pickedDay && pickedDay.startsWith(month.slice(0, 7)) ? pickedDay : null;
   // Filtros da lista: dia (calendário), categoria e busca por texto.
   const [query, setQuery] = useState('');
@@ -170,8 +171,8 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
       ListHeaderComponent={
         <View style={{ gap: space.md, paddingTop: space.sm }}>
           <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <Chip label="Acumulado" selected={allTime} onPress={() => setScope('all')} />
             <Chip label="Por mês" selected={!allTime} onPress={() => setScope('month')} />
-            <Chip label="Todo o período" selected={allTime} onPress={() => setScope('all')} />
           </View>
           {!allTime ? <MonthNav month={month} onMonth={onMonth} extra={<CalendarToggle mode={calMode} onMode={changeCal} />} /> : null}
           {!allTime ? (
@@ -192,10 +193,10 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
           <View style={{ width: '30%', alignSelf: 'center', height: 1, backgroundColor: colors.divider, marginVertical: space.sm }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
             <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colors.text }}>
-              Lançamentos <Text style={{ fontSize: 13, fontWeight: '500', color: colors.muted }}>{visible.length}</Text>
+              Lançamentos
             </Text>
             {list.length > 0 ? (
-              <Pressable onPress={() => setFiltersOpen(!filtersOpen)} hitSlop={8} accessibilityRole="button"
+              <Pressable onPress={() => { animateLayout(); setFiltersOpen(!filtersOpen); }} hitSlop={8} accessibilityRole="button"
                 accessibilityState={{ expanded: filtersOpen }} accessibilityLabel={filtersOpen ? 'Fechar busca e filtros' : 'Buscar e filtrar'}
                 style={({ pressed }) => ({ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: filtersOpen || filtering ? colors.primary : pressed ? colors.divider : colors.card })}>
@@ -207,7 +208,7 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
               </Pressable>
             ) : null}
             {withComments > 0 ? (
-              <Pressable onPress={() => setShowComments(!showComments)} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
+              <Pressable onPress={() => { animateLayout(); setShowComments(!showComments); }} accessibilityRole="switch" accessibilityState={{ checked: showComments }}
                 accessibilityLabel={showComments ? 'Fechar todos os comentários' : 'Expandir todos os comentários'}
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5,
                   paddingHorizontal: space.md, paddingVertical: 5, borderRadius: 15, borderWidth: 1,

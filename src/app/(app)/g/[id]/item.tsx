@@ -17,6 +17,7 @@ import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/
 import { effectiveRule, previewSplit } from '@/lib/split';
 import type { Category, Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
 import { colors, defaultEmoji, radius, space, type } from '@/theme';
+import { Backdrop, SlideUp } from '@/components/backdrop';
 
 type Params = {
   id: string; entryId?: string; duplicateOf?: string;
@@ -489,9 +490,10 @@ function NewCategory({ groupId, initialName, onClose, onCreated }: {
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-        <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
+        <Backdrop onPress={onClose} label="Fechar" />
+        <SlideUp>
         <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
           paddingTop: space.sm, paddingHorizontal: space.xl, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
           <View style={{ alignSelf: 'center', width: 35, height: 3, borderRadius: 2, backgroundColor: colors.divider }} />
@@ -508,6 +510,7 @@ function NewCategory({ groupId, initialName, onClose, onCreated }: {
             <Button title="Criar" style={{ flex: 1, height: 42 }} disabled={!name.trim()} loading={add.isPending} onPress={create} />
           </View>
         </View>
+        </SlideUp>
       </KeyboardAvoidingView>
       <EmojiPicker visible={picking} onClose={() => setPicking(false)} onPick={setEmoji} title="Emoji da categoria" />
     </Modal>
@@ -526,10 +529,11 @@ function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
   const close = () => { setQuery(''); onClose(); };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={close} accessibilityLabel="Fechar" />
-      <View style={{ maxHeight: '75%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+      <Backdrop onPress={close} label="Fechar" />
+      <SlideUp>
+      <View style={{ flexShrink: 1, backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingTop: space.sm, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
         <View style={{ alignSelf: 'center', width: 35, height: 3, borderRadius: 2, backgroundColor: colors.divider }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.xl }}>
@@ -558,6 +562,7 @@ function AllCategories({ visible, onClose, categories, value, onPick, onNew }: {
           </Text>
         </Pressable>
       </View>
+      </SlideUp>
       </KeyboardAvoidingView>
     </Modal>
   );

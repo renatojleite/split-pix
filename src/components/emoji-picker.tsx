@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, space } from '@/theme';
 import { Icon } from './icons';
 import { EmojiTile } from './ui';
+import { Backdrop, SlideUp } from '@/components/backdrop';
 
 const SECTIONS: { title: string; emojis: string[] }[] = [
   { title: 'Casa', emojis: ['🏠', '🏡', '🛋️', '🧹', '🔑', '💡', '🚿', '📺', '🛏️', '🧺'] },
@@ -36,10 +37,11 @@ export function EmojiPicker({ visible, onClose, onPick, title = 'Escolha um emoj
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-      <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
-      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '75%' }}>
+      <Backdrop onPress={onClose} label="Fechar" />
+      <SlideUp>
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, flexShrink: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: space.xl, paddingBottom: space.sm }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{title}</Text>
           <Pressable onPress={onClose} accessibilityLabel="Fechar" hitSlop={10}><Icon name="close" /></Pressable>
@@ -65,6 +67,7 @@ export function EmojiPicker({ visible, onClose, onPick, title = 'Escolha um emoj
           ))}
         </ScrollView>
       </SafeAreaView>
+      </SlideUp>
       </KeyboardAvoidingView>
     </Modal>
   );

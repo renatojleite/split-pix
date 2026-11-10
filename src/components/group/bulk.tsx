@@ -7,6 +7,7 @@ import { useUserId } from '@/lib/auth';
 import type { Category } from '@/lib/types';
 import { colors, space } from '@/theme';
 import { Chip, EmojiTile } from '../ui';
+import { Backdrop, SlideUp } from '@/components/backdrop';
 
 /** Folha que sobe de baixo, com título e conteúdo livre. */
 function Sheet({ visible, onClose, title, subtitle, children }: {
@@ -14,9 +15,10 @@ function Sheet({ visible, onClose, title, subtitle, children }: {
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
-      <Pressable style={{ flex: 1, backgroundColor: colors.scrim }} onPress={onClose} accessibilityLabel="Fechar" />
-      <View style={{ maxHeight: '75%', backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+      <Backdrop onPress={onClose} label="Fechar" />
+      <SlideUp>
+      <View style={{ flexShrink: 1, backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingTop: space.sm, paddingBottom: insets.bottom + space.lg, gap: space.md }}>
         <View style={{ alignSelf: 'center', width: 35, height: 3, borderRadius: 2, backgroundColor: colors.divider }} />
         <View style={{ paddingHorizontal: space.xl, gap: 2 }}>
@@ -25,6 +27,7 @@ function Sheet({ visible, onClose, title, subtitle, children }: {
         </View>
         <ScrollView contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.sm }}>{children}</ScrollView>
       </View>
+      </SlideUp>
     </Modal>
   );
 }

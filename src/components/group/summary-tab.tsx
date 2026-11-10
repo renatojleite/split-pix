@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
+import { animateLayout } from '@/lib/anim';
 import { dayMonth } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
 import { pairwiseDebts, shownPeople, summarize } from '@/lib/summary';
@@ -113,7 +114,7 @@ export function SummaryTab({ detail, month, onMonth }: {
             return (
             <View key={key} style={{ borderBottomWidth: i === s.categories.length - 1 ? 0 : 1, borderColor: colors.divider }}>
               <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }}
-                onPress={() => { const n = new Set(openCats); if (open) n.delete(key); else n.add(key); setOpenCats(n); }}
+                onPress={() => { animateLayout(); const n = new Set(openCats); if (open) n.delete(key); else n.add(key); setOpenCats(n); }}
                 style={({ pressed }) => ({ padding: space.lg, gap: 7, backgroundColor: pressed ? colors.card : 'transparent' })}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
                   <EmojiTile emoji={c.emoji} size={29} />

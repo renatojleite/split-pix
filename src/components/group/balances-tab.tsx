@@ -6,6 +6,7 @@ import { useAllEntries, useEntries, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dayMonth } from '@/lib/dates';
 import { formatBRL } from '@/lib/money';
+import { animateLayout } from '@/lib/anim';
 import { pairwiseDebts, shownPeople, summarize } from '@/lib/summary';
 import { colors, radius, space } from '@/theme';
 import { PopoverMenu, type Anchor, type MenuItem } from '../popover-menu';
@@ -29,6 +30,9 @@ export function BalancesTab({ detail, month, onMonth }: {
   const settlements = entries.filter((e) => e.type === 'transfer');
   // Pendências: dívida direta entre cada par (mais intuitivo que a versão simplificada).
   const debts = pairwiseDebts(entries);
+  // Por pessoa: subitens (pagou, acertos, de quem recebeu…) recolhidos por padrão.
+  const [openPeople, setOpenPeople] = useState<Set<string>>(new Set());
+  const togglePerson = (id: string) => { animateLayout(); const n = new Set(openPeople); if (n.has(id)) n.delete(id); else n.add(id); setOpenPeople(n); };
   const [pend, setPend] = useState<{ t: { from: string; to: string; cents: number }; anchor: Anchor } | null>(null);
   function pendItems(t: { from: string; to: string; cents: number }): MenuItem[] {
     const params = { from: t.from, to: t.to, amount: String(t.cents) };
@@ -121,18 +125,21 @@ export function BalancesTab({ detail, month, onMonth }: {
           .map((o) => ({ o, cents: settlements.filter((e) => e.transfer_to === m.id && e.paid_by === o.id).reduce((a, e) => a + e.amount_cents, 0) }))
           .filter((x) => x.cents > 0);
         const tone = p.balance > 0 ? colors.positive : p.balance < 0 ? colors.negative : colors.muted;
+        const open = openPeople.has(m.id);
         return (
           <Card key={m.id} style={{ gap: space.md }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+            <Pressable onPress={() => togglePerson(m.id)} accessibilityRole="button" accessibilityState={{ expanded: open }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
               <Avatar name={m.display_name} color={m.color} />
               <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colors.text }}>
                 {m.display_name}{m.id === me?.id ? <Text style={{ fontSize: 12, fontWeight: '400', color: colors.muted }}>  você</Text> : null}
               </Text>
-            </View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>{open ? 'Menos ▴' : 'Detalhes ▾'}</Text>
+            </Pressable>
             <View style={{ gap: 3 }}>
               <Line sign="" label="Total gasto" value={spentTotal} strong />
-              <Sub label="Pagou (despesas)" value={p.paid} />
-              <Sub label="Acertos enviados (transferências)" value={p.sent} />
+              {open ? <Sub label="Pagou (despesas)" value={p.paid} /> : null}
+              {open ? <Sub label="Acertos enviados (transferências)" value={p.sent} /> : null}
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 5, paddingHorizontal: space.sm,
                 paddingVertical: 7, borderRadius: 10, backgroundColor: colors.primarySoft }}>
@@ -142,9 +149,9 @@ export function BalancesTab({ detail, month, onMonth }: {
               </View>
 
               <Line sign="−" label="Total recebido" value={receivedTotal} strong />
-              {gotFrom.map((x) => <Sub key={x.o.id} label={`Recebido de ${name(x.o.id)}`} value={x.cents} />)}
-              {p.received ? <Sub label="Receitas (entradas)" value={p.received} /> : null}
-              {!receivedTotal ? <Sub label="Nada recebido" value={0} /> : null}
+              {open ? gotFrom.map((x) => <Sub key={x.o.id} label={`Recebido de ${name(x.o.id)}`} value={x.cents} />) : null}
+              {open && p.received ? <Sub label="Receitas (entradas)" value={p.received} /> : null}
+              {open && !receivedTotal ? <Sub label="Nada recebido" value={0} /> : null}
               {p.incomeShare ? <Line sign="+" label="Sua parte nas receitas" value={p.incomeShare} /> : null}
 
               <View style={{ height: 1, backgroundColor: colors.divider, marginVertical: 4 }} />
