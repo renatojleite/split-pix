@@ -170,7 +170,7 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen footer={!generated ? (
-        <Button title={mode === 'receive' ? 'Gerar QR Pix' : 'Gerar código Pix'} onPress={generate} disabled={!ready} />
+        <Button title="Gerar código Pix" onPress={generate} disabled={!ready} />
       ) : (
         <>
           <ErrorText>{save.error?.message}</ErrorText>
@@ -257,38 +257,36 @@ function PixForm({ params, detail }: { params: Params; detail: GroupDetail }) {
         )}
 
         {generated && payload ? (
+          // Mesmo layout para pagar e receber: valor, quem → quem, QR, copia e cola e as ações.
           <View style={{ gap: space.md, alignItems: 'center' }}>
-            {mode === 'pay' ? (
-              <>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text }}>{formatBRL(amount)}</Text>
-                <Button title={copied ? 'Código copiado ✓ — agora cole no banco' : 'Copiar código Pix'} icon="copy"
-                  onPress={copy} style={{ alignSelf: 'stretch' }} />
-                <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted, textAlign: 'center' }}>
-                  No app do seu banco: Pix › Pix Copia e Cola › colar. Confira o nome de {otherName} antes de confirmar.
-                </Text>
-              </>
-            ) : null}
-            <View style={{ padding: 14, backgroundColor: '#FFFFFF', borderRadius: 21, borderWidth: 1, borderColor: colors.divider }}>
-              <QRCode value={payload} size={mode === 'pay' ? 180 : 240} color="#000000" backgroundColor="#FFFFFF" ecl="M" />
+            <View style={{ alignItems: 'center', gap: 2 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 1, color: mode === 'pay' ? '#059669' : colors.primary }}>
+                {mode === 'pay' ? 'VOCÊ PAGA' : 'VOCÊ RECEBE'}
+              </Text>
+              <Text style={{ fontSize: 28, fontWeight: '800', color: colors.text }}>{formatBRL(amount)}</Text>
+              <Text style={{ fontSize: 13, color: colors.muted }}>
+                {mode === 'pay' ? `para ${otherName}` : `de ${otherName}`} · {typeInfo.label} {key}
+              </Text>
             </View>
-            {mode === 'receive' ? (
-              <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text }}>{formatBRL(amount)}</Text>
-            ) : null}
+            <View style={{ padding: 14, backgroundColor: '#FFFFFF', borderRadius: 21, borderWidth: 1, borderColor: colors.divider }}>
+              <QRCode value={payload} size={210} color="#000000" backgroundColor="#FFFFFF" ecl="M" />
+            </View>
             <Card style={{ alignSelf: 'stretch', gap: 6 }}>
               <Text style={{ fontSize: 12, color: colors.muted }}>Pix copia e cola</Text>
               <Text selectable numberOfLines={3} style={{ fontSize: 12, color: colors.textSoft, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
                 {payload}
               </Text>
             </Card>
-            {mode === 'receive' ? (
-              <View style={{ flexDirection: 'row', gap: space.sm, alignSelf: 'stretch' }}>
-                <Button title={copied ? 'Copiado ✓' : 'Copiar'} icon="copy" variant="secondary" onPress={copy} style={{ flex: 1 }} />
-                <Button title="WhatsApp" icon="share" variant="positive" onPress={sendWhatsApp} style={{ flex: 1 }} />
-              </View>
-            ) : null}
+            <View style={{ flexDirection: 'row', gap: space.sm, alignSelf: 'stretch' }}>
+              <Button title={copied ? 'Copiado ✓' : 'Copiar código'} icon="copy" onPress={copy} style={{ flex: 1 }} />
+              <Button title="WhatsApp" icon="share" variant="positive" onPress={sendWhatsApp} style={{ flex: 1 }} />
+            </View>
             <Button title="Compartilhar em outro app" variant="ghost" onPress={() => Share.share({ message })} style={{ alignSelf: 'stretch' }} />
-            <Text style={{ fontSize: 12, lineHeight: 15, color: colors.muted, textAlign: 'center' }}>
-              O split-pix só gera o código e não acompanha o pagamento. Depois do Pix, registre o acerto para atualizar o saldo.
+            <Text style={{ fontSize: 12, lineHeight: 16, color: colors.muted, textAlign: 'center' }}>
+              {mode === 'pay'
+                ? `No app do seu banco: Pix › Pix Copia e Cola › colar (ou ler o QR). Confira o nome de ${otherName} antes de confirmar.`
+                : `Mande o código ou o QR para ${otherName} pagar no banco dele.`}
+              {' '}O split-pix não acompanha o pagamento: depois do Pix, registre o acerto para atualizar o saldo.
             </Text>
           </View>
         ) : null}
