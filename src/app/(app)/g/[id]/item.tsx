@@ -12,7 +12,7 @@ import {
 } from '@/components/ui';
 import { useAddCategory, useAddComment, useComments, useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
-import { dayMonth, seriesDates, today } from '@/lib/dates';
+import { dateTimeLabel, dayMonth, seriesDates, today } from '@/lib/dates';
 import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/money';
 import { effectiveRule, previewSplit } from '@/lib/split';
 import type { Category, Entry, EntryType, RepeatEvery, SplitMode } from '@/lib/types';
@@ -104,6 +104,9 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
   const [repeatCount, setRepeatCount] = useState(3);
 
   const isEditing = !!entryId;
+  // created_by/updated_by são a conta (auth); o nome vem do participante do grupo com essa conta.
+  const who = (uid: string | null | undefined) =>
+    uid === userId ? 'você' : detail.allMembers.find((m) => m.user_id === uid)?.display_name ?? 'alguém do grupo';
   const category = detail.categories.find((c) => c.id === categoryId);
   const shownEmoji = emoji ?? (kind === 'expense' ? category?.emoji ?? defaultEmoji.expense : defaultEmoji[kind]);
   const repeating = !isEditing && repeatEvery !== 'none';
@@ -387,6 +390,19 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
               {preview.error && amount > 0 ? <ErrorText>{preview.error}</ErrorText> : null}
             </View>
           </>
+        ) : null}
+        {isEditing && entry?.created_at ? (
+          // Rodapé discreto: quem cadastrou e quando (e a última edição, se foi outra).
+          <View style={{ alignItems: 'center', gap: 2, paddingTop: space.lg }}>
+            <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center' }}>
+              Cadastrado por {who(entry.created_by)} em {dateTimeLabel(entry.created_at)}
+            </Text>
+            {entry.updated_at && Math.abs(new Date(entry.updated_at).getTime() - new Date(entry.created_at).getTime()) > 60000 ? (
+              <Text style={{ fontSize: 11, color: colors.muted, textAlign: 'center' }}>
+                Editado por {who(entry.updated_by)} em {dateTimeLabel(entry.updated_at)}
+              </Text>
+            ) : null}
+          </View>
         ) : null}
         <CommentsModal visible={commentsOpen} onClose={() => setCommentsOpen(false)} groupId={id} entryId={entryId ?? null}
           title={title} comments={comments} members={detail.allMembers} myMemberId={me?.id} />
