@@ -271,6 +271,17 @@ ok((await act(B)).unseen === 0, 'abrir o grupo zera as novidades');
 ok(!(await as(D, `select * from my_groups_activity() where group_id=$1`, [g])).length, 'quem é de fora não vê');
 ok(!!(await fails(D, `select mark_group_seen($1)`, [g])), 'quem é de fora não marca');
 
+// Parcela informativa
+const [{ id: inst }] = await save({ title: 'Geladeira', amount: 100000, paidBy: R, on: '2026-11-12' });
+await as(B, `select set_entry_installment($1, 1, 3)`, [inst]);
+const ir = (await as(A, `select installment_no, installment_of, amount_cents from entries where id=$1`, [inst]))[0];
+ok(ir.installment_no === 1 && ir.installment_of === 3 && Number(ir.amount_cents) === 100000, 'parcela 1/3 só marca (valor igual)');
+ok((await as(A, `select count(*)::int n from entries where title='Geladeira' and deleted_at is null`))[0].n === 1, 'não cria parcelas futuras');
+ok(!!(await fails(A, `select set_entry_installment($1, 4, 3)`, [inst])), 'parcela maior que o total é recusada');
+ok(!!(await fails(D, `select set_entry_installment($1, 1, 2)`, [inst])), 'quem é de fora não altera');
+await as(A, `select set_entry_installment($1, null, null)`, [inst]);
+ok((await as(A, `select installment_of is null x from entries where id=$1`, [inst]))[0].x, 'tirar a parcela');
+
 // Comentários nos lançamentos
 const [{ ce }] = await as(A, `select save_entry(p_group_id => $1, p_type => 'expense', p_title => 'Feira', p_amount_cents => 5000, p_paid_by => $2, p_occurred_on => '2026-11-09') ce`, [g, R]);
 const [{ c1 }] = await as(A, `select add_entry_comment($1, '  Inclui as frutas da semana  ') c1`, [ce]);

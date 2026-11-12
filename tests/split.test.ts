@@ -220,6 +220,8 @@ test('relatório: cabeçalho, pendente com Pix, chaves e extrato sem valores por
   assert.ok(st.includes('   Pago por Renato · 60/40'));
   assert.ok(st.includes('   Paula → Renato (acerto)'));
   assert.ok(st.includes('_Outubro 2026_') && st.includes('_Novembro 2026_'));
+  const parc = buildReport({ ...base, kind: 'statement', entries: [{ ...entries[0], installment_no: 1, installment_of: 3 }] });
+  assert.ok(parc.includes('03/11 🛒 Feira (parcela 1/3) — R$ 100,00'), 'parcela só como marca no extrato');
 
   const month = buildReport({ ...base, kind: 'summary', month: '2026-11-01', entries: entries.slice(0, 1) });
   assert.ok(month.includes('📅 Período: 01/11/2026 a 30/11/2026 (Novembro 2026)'));

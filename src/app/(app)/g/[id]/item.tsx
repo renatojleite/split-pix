@@ -10,7 +10,7 @@ import { Icon } from '@/components/icons';
 import {
   Button, Card, Chip, EmojiTile, ErrorText, Field, Header, IconButton, Input, Loading, Screen, Segmented, SplitBar,
 } from '@/components/ui';
-import { useAddCategory, useAddComment, useComments, useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
+import { useAddCategory, useAddComment, useSetEntryInstallment, useComments, useDeleteEntry, useEntry, useGroup, useSaveEntry, type GroupDetail } from '@/lib/api';
 import { useUserId } from '@/lib/auth';
 import { dateTimeLabel, dayMonth, seriesDates, today } from '@/lib/dates';
 import { centsFromInput, formatBRL, formatPercent, inputFromCents } from '@/lib/money';
@@ -102,6 +102,9 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
   const [picking, setPicking] = useState(false);
   const [repeatEvery, setRepeatEvery] = useState<RepeatEvery | 'none'>('none');
   const [repeatCount, setRepeatCount] = useState(3);
+  const setInstallment = useSetEntryInstallment(id);
+  const [instOf, setInstOf] = useState<number>(entry?.installment_of ?? 0); // 0 = não é parcela
+  const [instNo, setInstNo] = useState<number>(entry?.installment_no ?? 1);
 
   const isEditing = !!entryId;
   // created_by/updated_by são a conta (auth); o nome vem do participante do grupo com essa conta.
@@ -171,6 +174,13 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
       repeatCount: repeating ? repeatCount : 1,
       repeatEvery: repeating ? repeatEvery : 'month',
     });
+    // Parcela informativa: grava só se mudou (na série recorrente não se aplica).
+    const nextOf = !isTransfer && !repeating && instOf ? instOf : null;
+    const nextNo = nextOf ? Math.min(instNo, nextOf) : null;
+    const targetId = savedId || entryId;
+    if (targetId && (nextOf !== (entry?.installment_of ?? null) || nextNo !== (entry?.installment_no ?? null))) {
+      await setInstallment.mutateAsync({ entryId: targetId, no: nextNo, of: nextOf });
+    }
     // Comentário do novo lançamento (na série recorrente, fica no primeiro).
     if (!isEditing && comment.trim() && savedId) await addComment.mutateAsync({ entryId: savedId, body: comment });
     router.back();
@@ -282,6 +292,27 @@ function ItemForm({ params, detail, entry }: { params: Params; detail: GroupDeta
         <Field label="Quando">
           <DateField value={date} onChange={setDate} />
         </Field>
+
+        {!isTransfer && !repeating ? (
+          <Field label="Parcela" hint="Só informativo: não cria lançamentos nos próximos meses nem muda o valor.">
+            <View style={{ flexDirection: 'row', gap: 7 }}>
+              <Chip label="Não" selected={!instOf} onPress={() => setInstOf(0)} />
+              <Chip label="É parcela" selected={!!instOf} onPress={() => { setInstOf(instOf || 3); setInstNo(Math.min(instNo, instOf || 3)); }} />
+            </View>
+            {instOf ? (
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 14, color: colors.text }}>Parcela</Text>
+                <IconButton name="chevron-left" label="Parcela anterior" onPress={() => setInstNo(Math.max(1, instNo - 1))} />
+                <Text style={{ minWidth: 26, textAlign: 'center', fontSize: 15, fontWeight: '700', color: colors.text }}>{instNo}</Text>
+                <IconButton name="chevron-right" label="Próxima parcela" onPress={() => setInstNo(Math.min(instOf, instNo + 1))} />
+                <Text style={{ fontSize: 14, color: colors.text }}>de</Text>
+                <IconButton name="chevron-left" label="Menos parcelas" onPress={() => { const n = Math.max(2, instOf - 1); setInstOf(n); setInstNo(Math.min(instNo, n)); }} />
+                <Text style={{ minWidth: 26, textAlign: 'center', fontSize: 15, fontWeight: '700', color: colors.text }}>{instOf}</Text>
+                <IconButton name="chevron-right" label="Mais parcelas" onPress={() => setInstOf(Math.min(99, instOf + 1))} />
+              </Card>
+            ) : null}
+          </Field>
+        ) : null}
 
         {!isEditing ? (
           <Field label="Repetir">

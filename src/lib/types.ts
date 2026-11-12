@@ -64,6 +64,8 @@ export type Entry = {
   updated_at: string;
   created_by?: string | null; // conta que incluiu (destaque de novidades)
   created_at?: string;
+  installment_no?: number | null; // parcela só informativa ("1/3")
+  installment_of?: number | null;
   shares: EntryShare[];
 };
 

@@ -301,6 +301,12 @@ export function ExpensesTab({ detail, month, onMonth, onSelecting, newSince }: {
                   <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 0.5, color: '#FFFFFF' }}>NOVO</Text>
                 </View>
               ) : null}
+              {e.installment_of ? (
+                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}
+                  accessibilityLabel={`Parcela ${e.installment_no} de ${e.installment_of}`}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primaryInk }}>{e.installment_no}/{e.installment_of}</Text>
+                </View>
+              ) : null}
               {notes.length ? <CommentBadge count={notes.length} onPress={() => setCommentFor(e)} /> : null}
             </View>
             <Text style={{ fontSize: 12, color: colors.muted }} numberOfLines={1}>

@@ -163,7 +163,8 @@ export function buildReport(input: ReportInput): string {
       const cat = categories.find((c) => c.id === e.category_id);
       const emoji = e.emoji ?? (e.type === 'transfer' ? '💸' : e.type === 'income' ? '💰' : cat?.emoji ?? '🧾');
       const sign = e.type === 'income' ? '+' : '';
-      add(`${brDate(e.occurred_on).slice(0, 5)} ${emoji} ${e.title} — ${sign}${formatBRL(e.amount_cents)}`);
+      const parcela = e.installment_of ? ` (parcela ${e.installment_no}/${e.installment_of})` : '';
+      add(`${brDate(e.occurred_on).slice(0, 5)} ${emoji} ${e.title}${parcela} — ${sign}${formatBRL(e.amount_cents)}`);
       if (e.type === 'transfer') {
         add(`   ${name(e.paid_by)} → ${e.transfer_to ? name(e.transfer_to) : '—'} (acerto)`);
       } else {

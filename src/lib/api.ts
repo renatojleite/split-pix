@@ -338,7 +338,7 @@ export function useClearCategoryRule(groupId: string) {
 // ───────────── Lançamentos ─────────────
 
 const ENTRY_COLUMNS =
-  'id, group_id, type, title, emoji, amount_cents, paid_by, transfer_to, category_id, occurred_on, split_mode, recurrence_id, recurrence_index, recurrence_total, updated_by, updated_at, created_by, created_at, shares:entry_shares(member_id, share_cents, basis_points)';
+  'id, group_id, type, title, emoji, amount_cents, paid_by, transfer_to, category_id, occurred_on, split_mode, recurrence_id, recurrence_index, recurrence_total, updated_by, updated_at, created_by, created_at, installment_no, installment_of, shares:entry_shares(member_id, share_cents, basis_points)';
 
 export function useEntries(groupId: string, month: string) {
   return useQuery({
@@ -428,6 +428,16 @@ export function useSaveEntry(groupId: string) {
       qc.invalidateQueries({ queryKey: keys.group(groupId) });
       qc.invalidateQueries({ queryKey: keys.groups });
     },
+  });
+}
+
+/** Marca (ou limpa, com nulos) a parcela informativa: não cria lançamentos nem muda valores. */
+export function useSetEntryInstallment(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entryId, no, of }: { entryId: string; no: number | null; of: number | null }) =>
+      must(await supabase.rpc('set_entry_installment', { p_entry_id: entryId, p_no: no, p_of: of })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.group(groupId) }),
   });
 }
 
